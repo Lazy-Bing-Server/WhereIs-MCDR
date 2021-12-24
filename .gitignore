@@ -136,3 +136,9 @@ dmypy.json
 
 # KDE Dolphin
 .directory
+
+# Dependency
+/minecraft_data_api
+
+# Old reference
+/whereis.py

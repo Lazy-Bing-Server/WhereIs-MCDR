@@ -1,16 +1,21 @@
 {
-    "id": "my_plugin",
-    "version": "1.0.0",
-    "name": "My Plugin",
-    "description": "This description is a description to your plugin",
+    "id": "where_is",
+    "version": "1.0.0-alpha.1",
+    "name": "Where Is",
+    "description":  {
+		"en_us": "Query other players' coordinates",
+		"zh_cn": "查询其他玩家的坐标"
+	},
     "author": [
-        "You"
+        "Ra1ny_Yuki"
     ],
-    "link": "https://github.com/MCDReforged/MCDReforged-PluginTemplate",
+    "link": "https://github.com/Lazy-Bing-Server/WhereIs-MCDR",
     "dependencies": {
+        "minecraft_data_api": "*",
+        "mcdreforged": ">=2.1.3"
     },
-
+    "entrypoint": "where_is.entry",
     "resources": [
-        "lang"
+        "lang", "LICENSE"
     ]
 }

@@ -1,0 +1,4 @@
+where_is.err: "出现错误: {}"
+where_is.hover.tp: ': 点击以传送到'
+where_is.hover.voxel: "§bVoxelmap§r: 点此以高亮坐标点, 或者Ctrl点击添加路径点"
+where_is.hover.xaero: '§6Xaeros Minimap§r: 点击添加路径点'

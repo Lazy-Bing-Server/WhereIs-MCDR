@@ -1,0 +1,4 @@
+where_is.err: "Error occurred: {}"
+where_is.hover.tp: ': Click to teleport to'
+where_is.hover.voxel: "§bVoxelmap§r: Click to highlight the location, or Ctrl-Click to add waypoint"
+where_is.hover.xaero: '§6Xaeros Minimap§r: Click to add waypoint'
