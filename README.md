@@ -3,7 +3,7 @@
 Where Is
 -------
 
-A [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) plugin
+A [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) plugin, inspired by [Fallen_Breath's](https://github.com/Fallen-Breath) [Here](https://github.com/TISUnion/Here) and [Ivan-1F's](https://github.com/Ivan-1F) [Where](https://github.com/Ivan-1F/MCDReforged-Plugins/tree/master/where)
 
 ## Dependencies
 

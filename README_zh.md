@@ -3,7 +3,7 @@
 Where Is
 -------
 
-一个 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 的插件
+一个 [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) 的插件, 受到 [Fallen_Breath](https://github.com/Fallen-Breath) 的 [Here](https://github.com/TISUnion/Here) and [Ivan-1F](https://github.com/Ivan-1F) 的 [Where](https://github.com/Ivan-1F/MCDReforged-Plugins/tree/master/where) 启发
 
 ## 依赖
 
