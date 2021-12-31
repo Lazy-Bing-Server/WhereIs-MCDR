@@ -1,4 +1,4 @@
-**English** | [简体中文](README_cn.md)（WIP)
+**English** | [简体中文](README_zh.md)
 
 Where Is
 -------
@@ -9,17 +9,17 @@ A [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) plugin
 
 [MinecraftDataAPI](https://github.com/MCDReforged/MinecraftDataAPI/)
 
-[MCDReforged] >= 2.1.3
+[MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.3
 
 ## Commands
 
 `!!whereis` or `!!vris`（can be modified in config）：Show coordinate of other player
 
-`-a` or `-s` arguments are allowed（can be called in one command as `-as` or `-sa`）
+`-a` or `-s` arguments are allowed (can be called in one argument as `-as` or `-sa`)
 
 `-a` means broadcasting coordinate to **a**ll the players and highlight target player
 
-`-s` means sudo, allow to query coordinate of protected players
+`-s` means **s**udo, allows querying coordinate of protected players
 
 Both 2 arguments requires `admin` permission level in the config file of this plugin
 

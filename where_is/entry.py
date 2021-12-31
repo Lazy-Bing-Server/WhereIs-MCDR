@@ -1,9 +1,9 @@
 from mcdreforged.api.all import *
-from minecraft_data_api import get_player_coordinate, get_player_dimension, Coordinate
+from minecraft_data_api import Coordinate, get_player_coordinate, get_player_dimension, get_server_player_list
 
 from where_is.dimensions import get_dimension, Dimension, LegacyDimension
 from where_is.config import config
-from where_is.util import tr, get_data
+from where_is.globals import tr, debug
 
 
 @new_thread('WhereIs_Main')
@@ -12,14 +12,17 @@ def where_is(source: CommandSource, target_player: str, parameter: str = '-'):
     if 's' not in para_list and not config.location_protection.is_allowed(source, target_player):
         source.reply(tr('err.player_protected').set_color(RColor.red))
         return
-    coordinate = get_data(get_player_coordinate, target_player)
-    if isinstance(coordinate, Exception):
-        source.reply(tr("err", str(coordinate)).set_color(RColor.red))
-        raise coordinate
-    dimension = get_data(get_player_dimension, target_player)
-    if isinstance(dimension, Exception):
-        source.reply(tr("err", str(dimension)).set_color(RColor.red))
-        raise dimension
+    try:
+        player_list = get_server_player_list(timeout=config.query_timeout)[2]
+        debug(str(player_list))
+        if target_player not in tuple([] if player_list is None else player_list):
+            source.reply(tr('err.not_online').set_color(RColor.red))
+            return
+        coordinate = get_player_coordinate(target_player, timeout=config.query_timeout)
+        dimension = get_player_dimension(target_player, timeout=config.query_timeout)
+    except ValueError as exc:
+        source.reply(tr("err", str(exc)).set_color(RColor.red))
+        raise
     dimension = get_dimension(dimension)
 
     rtext = where_is_text(target_player, coordinate, dimension)
