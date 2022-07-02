@@ -1,5 +1,12 @@
-where_is.err: "Error occurred: {}"
-where_is.err.not_online: "Required player is not online"
-where_is.hover.tp: ': Click to teleport to'
-where_is.hover.voxel: "§bVoxelmap§r: Click to highlight the location, or Ctrl-Click to add waypoint"
-where_is.hover.xaero: '§6Xaeros Minimap§r: Click to add waypoint'
+where_is:
+  err:
+    generic: "Error occurred: {}"
+    not_online: "Required player is not online"
+  hover:
+    tp: ": Click to teleport to"
+    voxel: "§bVoxelmap§r: Click to highlight the location, or Ctrl-Click to add waypoint"
+    xaero: '§6Xaeros Minimap§r: Click to add waypoint'
+  dim:
+    overworld: 'Overworld'
+    the_nether: 'Nether'
+    the_end: 'The End'

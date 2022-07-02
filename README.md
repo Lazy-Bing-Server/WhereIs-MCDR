@@ -31,15 +31,16 @@ Calling `!!MCDR plg reload where_is` to reload is required to make it loaded aft
 
 Here is the config items in the file
 
-| Keys                      | Value type                     | Default value           | Introduction                                                 |
-| ------------------------- | ------------------------------ | ----------------------- | ------------------------------------------------------------ |
-| `command_prefix`          | `list`                         | `'!!vris', '!!whereis'` | Command prefix of this plugin                                |
-| `permission_requirements` | `dict`(which includes 2 items) | In the following sheets | Minium permission of commands                                |
-| `hightlight_time`         | `int`                          | `0`                     | Highlight player time when command with `-a` called          |
-| `display_waypoints`       | `dict`(which includes 2 items) | In the following sheets | If the text would include waypoint text of minimap           |
-| `query_timeout`           | `int`                          | `3`                     | Timeout of Minecraft Data API (seconds)                      |
-| `click_to_teleport`       | `bool`                         | `true`                  | Allow player click to fill the teleport command (still requires operator permission) |
-| `location_protection`     | `dict`(which includes 5 items) | In the following sheets | Player coordinate protection configuration                   |
+| Keys                         | Value type                     | Default value           | Introduction                                                 |
+| ---------------------------- | ------------------------------ | ----------------------- | ------------------------------------------------------------ |
+| `command_prefix`             | `list`                         | `'!!vris', '!!whereis'` | Command prefix of this plugin                                |
+| `permission_requirements`    | `dict`(which includes 2 items) | In the following sheets | Minium permission of commands                                |
+| `hightlight_time`            | `int`                          | `0`                     | Highlight player time when command with `-a` called          |
+| `display_waypoints`          | `dict`(which includes 2 items) | In the following sheets | If the text would include waypoint text of minimap           |
+| `query_timeout`              | `int`                          | `3`                     | Timeout of Minecraft Data API (seconds)                      |
+| `click_to_teleport`          | `bool`                         | `true`                  | Allow player click to fill the teleport command (still requires operator permission) |
+| `location_protection`        | `dict`(which includes 5 items) | In the following sheets | Player coordinate protection configuration                   |
+| `dimension_translation_mode` | `Literal['mcdr', 'minecraft']` | `'mcdr'`                | `mcdr`: mcdr translates dimension names; `minecraft`: minecraft translates dimension names. In 1.19 and later versions, using `mcdr` will avoid translation failure due to these dimension key change. |
 
 In the sheet above, the items which have stable items is showing below:
 

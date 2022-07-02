@@ -31,15 +31,16 @@ Where Is
 
 以下为配置文件内容
 
-| 键                        | 值的类型              | 默认值                  | 说明                                    |
-| ------------------------- | --------------------- | ----------------------- | --------------------------------------- |
-| `command_prefix`          | `list`                | `'!!vris', '!!whereis'` | 插件指令前缀                            |
-| `permission_requirements` | `dict`(含固定的2个值) | 见下表                  | 指令要求的最小权限等级                  |
-| `hightlight_time`         | `int`                 | `0`                     | 当包含 `-a` 参数时高亮玩家的时间        |
-| `display_waypoints`       | `dict`(含固定的2个值) | 见下表                  | 是否显示小地图坐标点                    |
-| `query_timeout`           | `int`                 | `3`                     | Minecraft Data API的超时时间            |
-| `click_to_teleport`       | `bool`                | `true`                  | 允许玩家点击补全传送指令 (仍需OP以执行) |
-| `location_protection`     | `dict`(含固定的5个值) | 见下表                  | 玩家坐标保护相关设定                    |
+| 键                           | 值的类型                       | 默认值                  | 说明                                                         |
+| ---------------------------- | ------------------------------ | ----------------------- | ------------------------------------------------------------ |
+| `command_prefix`             | `list`                         | `'!!vris', '!!whereis'` | 插件指令前缀                                                 |
+| `permission_requirements`    | `dict`(含固定的2个值)          | 见下表                  | 指令要求的最小权限等级                                       |
+| `hightlight_time`            | `int`                          | `0`                     | 当包含 `-a` 参数时高亮玩家的时间                             |
+| `display_waypoints`          | `dict`(含固定的2个值)          | 见下表                  | 是否显示小地图坐标点                                         |
+| `query_timeout`              | `int`                          | `3`                     | Minecraft Data API的超时时间                                 |
+| `click_to_teleport`          | `bool`                         | `true`                  | 允许玩家点击补全传送指令 (仍需OP以执行)                      |
+| `location_protection`        | `dict`(含固定的5个值)          | 见下表                  | 玩家坐标保护相关设定                                         |
+| `dimension_translation_mode` | `Literal['mcdr', 'minecraft']` | `'mcdr'`                | `mcdr`: 维度名称由MCDR翻译; `minecraft`: 维度名称由Minecraft翻译。在1.19及以上版本，用`mcdr`项可以避免因翻译键名改动造成的翻译失败 |
 
 上述提到的含固定键值对的的配置项如下:
 

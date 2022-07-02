@@ -21,7 +21,7 @@ def where_is(source: CommandSource, target_player: str, parameter: str = '-'):
         coordinate = get_player_coordinate(target_player, timeout=config.query_timeout)
         dimension = get_player_dimension(target_player, timeout=config.query_timeout)
     except ValueError as exc:
-        source.reply(tr("err", str(exc)).set_color(RColor.red))
+        source.reply(tr("err.generic", str(exc)).set_color(RColor.red))
         raise
     dimension = get_dimension(dimension)
 

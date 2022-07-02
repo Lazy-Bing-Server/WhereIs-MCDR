@@ -3,6 +3,8 @@ from typing import Tuple
 
 from mcdreforged.api.all import *
 from minecraft_data_api import Coordinate
+from where_is.config import config
+from where_is.globals import tr
 
 """
 Copied from TISUnion/Here
@@ -66,6 +68,12 @@ class LegacyDimension(Dimension):
         return ID_TO_REG[self.dim_id]
 
     def get_rtext(self) -> RTextBase:
+        if config.translate_dim_with_mcdr:
+            return tr({
+                0: 'dim.overworld',
+                -1: 'dim.the_nether',
+                1: 'dim.the_end'
+            }[self.dim_id]).set_color(self.get_color())
         return RTextTranslation({
                                     0: 'createWorld.customize.preset.overworld',
                                     -1: 'advancements.nether.root.title',

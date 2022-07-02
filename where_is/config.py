@@ -1,5 +1,6 @@
 from mcdreforged.api.utils import Serializable
 from mcdreforged.api.types import CommandSource, PlayerCommandSource
+from enum import Enum
 from typing import List, Union, Dict
 
 from where_is.globals import gl_server
@@ -44,8 +45,13 @@ class LocationProtection(Serializable):
             return False
 
     def register_tr(self):
-        for lang, value in self.protected_text.items()  :
+        for lang, value in self.protected_text.items():
             gl_server.register_translation(lang, {'where_is.err.player_protected': value})
+
+
+class TranslationMode(Enum):
+    mcdr = True
+    minecraft = False
 
 
 class Config(Serializable):
@@ -56,12 +62,17 @@ class Config(Serializable):
     query_timeout: int = 3
     click_to_teleport: bool = True
     location_protection: LocationProtection = LocationProtection.get_default()
+    dimension_translation_mode: TranslationMode = TranslationMode.minecraft
 
     @classmethod
     def load(cls) -> 'Config':
         cfg = gl_server.load_config_simple(target_class=cls)
         cfg.location_protection.register_tr()
         return cfg
+
+    @property
+    def translate_dim_with_mcdr(self):
+        return self.dimension_translation_mode.value
 
 
 config = Config.load()
