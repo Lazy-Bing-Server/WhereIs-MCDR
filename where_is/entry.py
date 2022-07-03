@@ -120,28 +120,30 @@ def where_is_text(target_player: str, pos: Coordinate, dim: Dimension) -> RTextB
 
 
 def register_commands(server: PluginServerInterface):
-    server.register_command(
-        Literal(config.command_prefix.where_is_prefixes).then(
-            QuotableText("player").requires(
-                config.permission_requirements.query_is_allowed
-            ).runs(
-                lambda src, ctx: where_is(src, ctx['player'])).then(
-                QuotableText('parameter').requires(
-                    config.permission_requirements.is_admin
-                ).requires(
-                    lambda src, ctx: ctx['parameter'].startswith('-')
+    if config.enable_where_is:
+        server.register_command(
+            Literal(config.command_prefix.where_is_prefixes).then(
+                QuotableText("player").requires(
+                    config.permission_requirements.query_is_allowed
                 ).runs(
-                    lambda src, ctx: where_is(src, ctx['player'], ctx['parameter'])
+                    lambda src, ctx: where_is(src, ctx['player'])).then(
+                    QuotableText('parameter').requires(
+                        config.permission_requirements.is_admin
+                    ).requires(
+                        lambda src, ctx: ctx['parameter'].startswith('-')
+                    ).runs(
+                        lambda src, ctx: where_is(src, ctx['player'], ctx['parameter'])
+                    )
                 )
             )
         )
-    )
 
-    server.register_command(
-        Literal(config.command_prefix.here_prefixes).requires(
-            config.permission_requirements.broadcast_is_allowed
-        ).runs(lambda src: here(src))
-    )
+    if config.enable_here:
+        server.register_command(
+            Literal(config.command_prefix.here_prefixes).requires(
+                config.permission_requirements.broadcast_is_allowed
+            ).runs(lambda src: here(src))
+        )
 
 
 def register_help_messages(server: PluginServerInterface):
