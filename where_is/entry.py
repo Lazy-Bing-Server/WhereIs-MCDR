@@ -3,7 +3,7 @@ from minecraft_data_api import Coordinate, get_player_coordinate, get_player_dim
 
 from where_is.dimensions import get_dimension, Dimension, LegacyDimension
 from where_is.config import config
-from where_is.globals import tr, debug
+from where_is.globals import tr, debug, gl_server, ntr
 
 
 @new_thread('WhereIs_Main')
@@ -19,21 +19,40 @@ def where_is(source: CommandSource, target_player: str, parameter: str = '-'):
             source.reply(tr('err.not_online').set_color(RColor.red))
             return
         coordinate = get_player_coordinate(target_player, timeout=config.query_timeout)
-        dimension = get_player_dimension(target_player, timeout=config.query_timeout)
-    except ValueError as exc:
+        dimension = get_dimension(get_player_dimension(target_player, timeout=config.query_timeout))
+        rtext = where_is_text(target_player, coordinate, dimension)
+    except Exception as exc:
         source.reply(tr("err.generic", str(exc)).set_color(RColor.red))
-        raise
-    dimension = get_dimension(dimension)
-
-    rtext = where_is_text(target_player, coordinate, dimension)
+        gl_server.logger.exception('Unexpected exception occurred while querying player location')
+        return
 
     if 'a' in para_list:
-        source.get_server().broadcast(rtext)
-        if config.highlight_time > 0:
-            source.get_server().execute('effect give {} minecraft:glowing {} 0 true'.format(
-                target_player, config.highlight_time))
+        gl_server.broadcast(rtext)
+        if config.highlight_time.where_is > 0:
+            gl_server.execute('effect give {} minecraft:glowing {} 0 true'.format(
+                target_player, config.highlight_time.where_is))
     else:
         source.reply(rtext)
+
+
+@new_thread('WhereIs_Main')
+def here(source: PlayerCommandSource):
+    if gl_server.get_plugin_metadata('here') is not None:
+        gl_server.logger.warning(ntr('warn.duplicated_here'))
+        return
+    try:
+        coordinate = get_player_coordinate(source.player, timeout=config.query_timeout)
+        dimension = get_dimension(get_player_dimension(source.player, timeout=config.query_timeout))
+        rtext = where_is_text(source.player, coordinate, dimension)
+    except Exception as exc:
+        source.reply(tr("err.generic", str(exc)).set_color(RColor.red))
+        gl_server.logger.exception('Unexpected exception occurred while broadcasting player location')
+        return
+
+    gl_server.broadcast(rtext)
+    if config.highlight_time.here > 0:
+        gl_server.execute('effect give {} minecraft:glowing {} 0 true'.format(
+            source.player, config.highlight_time.here))
 
 
 def coordinate_text(x: float, y: float, z: float, dimension: Dimension):
@@ -102,9 +121,9 @@ def where_is_text(target_player: str, pos: Coordinate, dim: Dimension) -> RTextB
 
 def register_commands(server: PluginServerInterface):
     server.register_command(
-        Literal(config.command_prefix).then(
+        Literal(config.command_prefix.where_is_prefixes).then(
             QuotableText("player").requires(
-                config.permission_requirements.is_allowed
+                config.permission_requirements.query_is_allowed
             ).runs(
                 lambda src, ctx: where_is(src, ctx['player'])).then(
                 QuotableText('parameter').requires(
@@ -118,10 +137,24 @@ def register_commands(server: PluginServerInterface):
         )
     )
 
+    server.register_command(
+        Literal(config.command_prefix.here_prefixes).requires(
+            config.permission_requirements.broadcast_is_allowed
+        ).runs(lambda src: here(src))
+    )
 
-def on_load(server: PluginServerInterface, prev_modules):
-    if isinstance(config.command_prefix, list):
-        for p in config.command_prefix:
+
+def register_help_messages(server: PluginServerInterface):
+    if config.enable_where_is:
+        for p in config.command_prefix.where_is_prefixes:
             server.register_help_message(p, server.get_self_metadata().description,
                                          permission=config.permission_requirements.where_is)
+    if config.enable_here:
+        for p in config.command_prefix.here_prefixes:
+            server.register_help_message(p, server.get_self_metadata().description,
+                                         permission=config.permission_requirements.here)
+
+
+def on_load(server: PluginServerInterface, prev_modules):
+    register_help_messages(server)
     register_commands(server)

@@ -13,15 +13,17 @@ A [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) plugin, inspired b
 
 ## Commands
 
-`!!whereis` or `!!vris`（can be modified in config）：Show coordinate of other player
+1. `!!whereis` or `!!vris`（can be modified in config）：Show coordinate of other player
 
-`-a` or `-s` arguments are allowed (can be called in one argument as `-as` or `-sa`)
+​	`-a` or `-s` arguments are allowed (can be called in one argument as `-as` or `-sa`)
 
-`-a` means broadcasting coordinate to **a**ll the players and highlight target player
+​	`-a` means broadcasting coordinate to **a**ll the players and highlight target player
 
-`-s` means **s**udo, allows querying coordinate of protected players
+​	`-s` means **s**udo, allows querying coordinate of protected players
 
-Both 2 arguments requires `admin` permission level in the config file of this plugin
+​	Both 2 arguments requires `admin` permission level in the config file of this plugin
+
+2. `!!here` (can be modified in config）: Broadcast your current coordinate
 
 ## Config File
 
@@ -31,23 +33,43 @@ Calling `!!MCDR plg reload where_is` to reload is required to make it loaded aft
 
 Here is the config items in the file
 
-| Keys                         | Value type                     | Default value           | Introduction                                                 |
-| ---------------------------- | ------------------------------ | ----------------------- | ------------------------------------------------------------ |
-| `command_prefix`             | `list`                         | `'!!vris', '!!whereis'` | Command prefix of this plugin                                |
-| `permission_requirements`    | `dict`(which includes 2 items) | In the following sheets | Minium permission of commands                                |
-| `hightlight_time`            | `int`                          | `0`                     | Highlight player time when command with `-a` called          |
-| `display_waypoints`          | `dict`(which includes 2 items) | In the following sheets | If the text would include waypoint text of minimap           |
-| `query_timeout`              | `int`                          | `3`                     | Timeout of Minecraft Data API (seconds)                      |
-| `click_to_teleport`          | `bool`                         | `true`                  | Allow player click to fill the teleport command (still requires operator permission) |
-| `location_protection`        | `dict`(which includes 5 items) | In the following sheets | Player coordinate protection configuration                   |
-| `dimension_translation_mode` | `Literal['mcdr', 'minecraft']` | `'mcdr'`                | `mcdr`: mcdr translates dimension names; `minecraft`: minecraft translates dimension names. In 1.19 and later versions, using `mcdr` will avoid translation failure due to these dimension key change. |
+**WARNING: These 2 items which are marked with asterisk below should be configured manually before you update to 2.x or you'll lose all the configuration during loading the new version!!! You can ignore this message if you haven't install this plugin before**
+
+| Keys                         | Value type                      | Default value           | Introduction                                                 |
+| ---------------------------- | ------------------------------- |-------------------------| ------------------------------------------------------------ |
+| `enable_where_is`            | `bool`                          | `true`                  | Set it to `true` to enable query other player location       |
+| `enable_here`                | `bool`                          | `true`                  | Set it to `true` to enable broadcast your location           |
+| *`command_prefix`            | `dict`(which includes 2 items)  | In the following sheets | Command prefix of this plugin                                |
+| `permission_requirements`    | `dict`(which includes 3 items)  | In the following sheets | Minimum permission of commands                               |
+| *`hightlight_time`           | ``dict`(which includes 2 items) | In the following sheets | Highlight player time when coordinates are broadcasted to all the ones. |
+| `display_waypoints`          | `dict`(which includes 2 items)  | In the following sheets | If the text would include waypoint text of minimap           |
+| `query_timeout`              | `int`                           | `3`                     | Timeout of Minecraft Data API (seconds)                      |
+| `click_to_teleport`          | `bool`                          | `true`                  | Allow player click to fill the teleport command (still requires operator permission) |
+| `location_protection`        | `dict`(which includes 5 items)  | In the following sheets | Player coordinate protection configuration                   |
+| `dimension_translation_mode` | `Literal['mcdr', 'minecraft']`  | `'minecraft'`           | `mcdr`: mcdr translates dimension names; `minecraft`: minecraft translates dimension names. In 1.19 and later versions, using `mcdr` will avoid translation failure due to these dimension key change. |
+| `custom_dimension_name`      | `Dict[str, Dict[str, str]]`     | Too long to show        | A mapping of dimension name translation. This fist layer keys are the languages. The second layer keys are the dimension IDs (Non-vanilla dimensions are allowed. vanilla dimensions should are required to fill and should omit the namespace). |
 
 In the sheet above, the items which have stable items is showing below:
 
+**The asterisked items contents goes here:**
+
+| Keys of`command_prefix` | Value type | Default value           | Introduction                          |
+| ----------------------- | ---------- | ----------------------- | ------------------------------------- |
+| `where_is`              | `str`      | ['!!vris', '!!whereis'] | Command prefix to query locations     |
+| `here`                  | `str`      | ['!!here']              | Command prefix to broadcast locations |
+
+| Keys of`highlight_time` | Value type | Default value | Introduction                                                 |
+| ----------------------- | ---------- | ------------- | ------------------------------------------------------------ |
+| `where_is`              | `int`      | `0`           | Highlight player time when  querying other player's location and broadcast |
+| `here`                  | `int`      | `15`          | Highlight player time when  broadcasting your location       |
+
+The rest are the regular items:
+
 | Keys of`permission_requirements` | Value type | Default value | Introduction                                                 |
 | -------------------------------- | ---------- | ------------- | ------------------------------------------------------------ |
-| `where_is`                       | `int`      | `1`           | Permissions which allows command calls without extra arguments |
-| `admin`                          | `int`      | `3`           | Permissions which allows command calls with extra arguments  |
+| `where_is`                       | `int`      | `1`           | Permissions which allows query location without extra arguments |
+| `here`                           | `int`      | `0`           | Permissions which allows broadcast your location without extra arguments |
+| `admin`                          | `int`      | `3`           | Permissions which allows query location with extra arguments |
 
 | Keys of`display_waypoints` | Value type | Default value | Introduction                                                 |
 | -------------------------- | ---------- | ------------- | ------------------------------------------------------------ |

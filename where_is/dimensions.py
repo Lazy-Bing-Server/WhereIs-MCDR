@@ -4,7 +4,7 @@ from typing import Tuple
 from mcdreforged.api.all import *
 from minecraft_data_api import Coordinate
 from where_is.config import config
-from where_is.globals import tr
+from where_is.globals import tr, dtr
 
 """
 Copied from TISUnion/Here
@@ -104,7 +104,7 @@ class CustomDimension(Dimension):
         return self.reg_key
 
     def get_rtext(self) -> RTextBase:
-        return RText(self.reg_key).set_color(self.get_color())
+        return tr(f"dim.{self.reg_key}").set_translator(dtr).set_color(self.get_color())
 
     def has_opposite(self) -> bool:
         return False

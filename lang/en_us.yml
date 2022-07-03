@@ -2,11 +2,15 @@ where_is:
   err:
     generic: "Error occurred: {}"
     not_online: "Required player is not online"
+  warn:
+    duplicated_here: "Duplicated function between this plugin and Here, this function will not be triggered while Here exists"
   hover:
     tp: ": Click to teleport to"
     voxel: "§bVoxelmap§r: Click to highlight the location, or Ctrl-Click to add waypoint"
     xaero: '§6Xaeros Minimap§r: Click to add waypoint'
-  dim:
+  default_dim:
     overworld: 'Overworld'
     the_nether: 'Nether'
     the_end: 'The End'
+  cfg:
+    vanilla_dim_missed: 'Vanilla dimension translations for language "{0}" not found: {1}'
