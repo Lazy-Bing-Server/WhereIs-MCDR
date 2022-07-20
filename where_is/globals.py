@@ -29,14 +29,6 @@ def ntr(key: str, *args, lang: Optional[str] = None, allow_failure: bool = True,
     return gl_server.tr(key, *args, language='en_us', allow_failure=allow_failure, **kwargs)
 
 
-def get_default_mappings(lang: str):
-    __REQUIRED_DIMENSIONS = 'overworld', 'the_nether', 'the_end'
-    ret = {}
-    for dim_key in __REQUIRED_DIMENSIONS:
-        ret[dim_key] = ntr(f'default_dim.{dim_key}', lang=lang, allow_failure=False)
-    return ret
-
-
 def dtr(key: str, *args, lang: Optional[str] = None, allow_failure: bool = True, **kwargs):
     try:
         return ntr(key, *args, lang=lang, allow_failure=False, **kwargs)

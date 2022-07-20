@@ -1,9 +1,9 @@
 from mcdreforged.api.utils import Serializable
-from mcdreforged.api.types import CommandSource, PlayerCommandSource
+from mcdreforged.api.types import CommandSource, PlayerCommandSource, PluginServerInterface
 from enum import Enum
 from typing import List, Union, Dict
 
-from where_is.globals import gl_server, get_default_mappings, ntr
+from where_is.globals import gl_server, ntr
 
 
 class PermissionReq(Serializable):
@@ -48,9 +48,9 @@ class LocationProtection(Serializable):
         else:
             return False
 
-    def register_tr(self):
+    def register_tr(self, server: PluginServerInterface):
         for lang, value in self.protected_text.items():
-            gl_server.register_translation(lang, {'where_is.err.player_protected': value})
+            server.register_translation(lang, {'where_is.err.player_protected': value})
 
 
 class TranslationMode(Enum):
@@ -97,14 +97,18 @@ class Config(Serializable):
     click_to_teleport: bool = True
     location_protection: LocationProtection = LocationProtection.get_default()
     dimension_translation_mode: TranslationMode = TranslationMode.minecraft
-    custom_dimension_name: Dict[str, Dict[str, str]] = {}
-
-    @classmethod
-    def get_default(cls):
-        default = cls.deserialize({})
-        for lang in ('en_us', 'zh_cn'):
-            default.custom_dimension_name[lang] = get_default_mappings(lang)
-        return default
+    custom_dimension_name: Dict[str, Dict[str, str]] = {
+        "en_us": {
+            "overworld": "Overworld",
+            "the_nether": "Nether",
+            "the_end": "The End"
+        },
+        "zh_cn": {
+            "overworld": "主世界",
+            "the_nether": "下界",
+            "the_end": "末地"
+        }
+    }
 
     @classmethod
     def load(cls) -> 'Config':
@@ -119,16 +123,13 @@ class Config(Serializable):
         requires_save = False
         for lang, mappings in cfg.custom_dimension_name.copy().items():
             missing = []
-            for key, value in get_default_mappings(lang).items():
+            for key, value in cls.get_default().custom_dimension_name[lang].items():
                 if key not in mappings.keys():
                     cfg.custom_dimension_name[lang][key] = value
                     requires_save = True
                     missing.append(key)
             if len(missing) > 0:
                 gl_server.logger.info(ntr('cfg.vanilla_dim_missed', lang, ', '.join(missing)))
-            gl_server.register_translation(lang, {'where_is': {'dim': cfg.custom_dimension_name[lang]}})
-
-        cfg.location_protection.register_tr()
 
         if requires_save:
             gl_server.save_config_simple(cfg)

@@ -157,6 +157,13 @@ def register_help_messages(server: PluginServerInterface):
                                          permission=config.permission_requirements.here)
 
 
+def register_customized_translations(server: PluginServerInterface):
+    for lang, mappings in config.custom_dimension_name.items():
+        server.register_translation(lang, {'where_is': {'dim': config.custom_dimension_name[lang]}})
+    config.location_protection.register_tr(server)
+
+
 def on_load(server: PluginServerInterface, prev_modules):
     register_help_messages(server)
+    register_customized_translations(server)
     register_commands(server)

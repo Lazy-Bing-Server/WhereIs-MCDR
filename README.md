@@ -15,6 +15,8 @@ A [MCDReforged](https://github.com/Fallen-Breath/MCDReforged) plugin, inspired b
 
 1. `!!whereis` or `!!vris`（can be modified in config）：Show coordinate of other player
 
+Command format: `!!whereis <player> [args(optional)]`
+
 ​	`-a` or `-s` arguments are allowed (can be called in one argument as `-as` or `-sa`)
 
 ​	`-a` means broadcasting coordinate to **a**ll the players and highlight target player

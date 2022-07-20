@@ -1,6 +1,6 @@
 {
     "id": "where_is",
-    "version": "2.0.1+build.4",
+    "version": "2.0.2+build.6",
     "name": "Where Is",
     "description":  {
 		"en_us": "Query players' coordinates",
