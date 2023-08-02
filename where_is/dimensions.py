@@ -90,7 +90,8 @@ class CustomDimension(Dimension):
         return self.reg_key
 
     def get_rtext(self) -> RTextBase:
-        if config.translate_dim_with_mcdr:
+        translation_key_mappings = config.get_translation_key_mappings()
+        if config.translate_dim_with_mcdr or self.reg_key not in translation_key_mappings:
             return tr(f"dim.{self.reg_key}").set_translator(dtr).set_color(self.get_color())
         else:
             return RTextTranslation(config.get_translation_key_mappings()[self.reg_key], color=self.get_color())
