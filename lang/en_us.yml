@@ -2,6 +2,8 @@ where_is:
   err:
     generic: "Error occurred: {}"
     not_online: "Required player is not online"
+    perm_denied: "Permission denied"
+    invalid_args: "Invalid argument"
   warn:
     duplicated_here: "Duplicated function between this plugin and Here, this function will not be triggered while Here exists"
   hover:
@@ -14,3 +16,4 @@ where_is:
     the_end: 'The End'
   cfg:
     vanilla_dim_missed: 'Vanilla dimension translations for language "{0}" not found: {1}'
+    dim_key_missed: 'Vanilla dimension translation key not found: {0}'

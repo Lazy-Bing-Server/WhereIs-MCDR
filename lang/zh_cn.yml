@@ -2,6 +2,8 @@ where_is:
   err:
     generic: "出现错误: {}"
     not_online: "这玩家不在线啊"
+    perm_denied: "权限不足"
+    invalid_args: "无效的参数"
   warn:
     duplicated_here: "本插件与Here存在功能重复，本插件的Here功能暂停工作"
   hover:
@@ -13,4 +15,5 @@ where_is:
     the_nether: '下界'
     the_end: '末地'
   cfg:
-    vanilla_dim_missed: '适用于语言"{0}"的原版维度名称翻译键未找到: {1}'
+    vanilla_dim_missed: '适用于语言"{0}"的原版维度名称未找到: {1}'
+    dim_key_missed: '原版维度翻译键未找到: {0}'

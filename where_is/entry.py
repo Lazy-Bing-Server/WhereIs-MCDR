@@ -1,14 +1,21 @@
-from mcdreforged.api.all import *
-from minecraft_data_api import Coordinate, get_player_coordinate, get_player_dimension, get_server_player_list
+from minecraft_data_api import get_player_info, get_player_dimension, get_server_player_list
+from typing import Optional, Union
+
+from mcdreforged.api.types import CommandSource, PlayerCommandSource, Info, PluginServerInterface
+from mcdreforged.api.decorator import new_thread
+from mcdreforged.api.rtext import RColor, RTextBase, RText, RAction, RTextList
+from mcdreforged.api.command import Literal, QuotableText, CommandContext
 
 from where_is.dimensions import get_dimension, Dimension, LegacyDimension
 from where_is.config import config
-from where_is.globals import tr, debug, gl_server, ntr
+from where_is.utils import tr, debug, ntr
+from where_is.constants import gl_server
+from where_is.position import Position
 
 
 @new_thread('WhereIs_Main')
-def where_is(source: CommandSource, target_player: str, parameter: str = '-'):
-    para_list = list(parameter[1:])
+def where_is(source: CommandSource, target_player: str, args: str = '-'):
+    para_list = list(args[1:])
     if 's' not in para_list and not config.location_protection.is_allowed(source, target_player):
         source.reply(tr('err.player_protected').set_color(RColor.red))
         return
@@ -18,7 +25,7 @@ def where_is(source: CommandSource, target_player: str, parameter: str = '-'):
         if target_player not in tuple([] if player_list is None else player_list):
             source.reply(tr('err.not_online').set_color(RColor.red))
             return
-        coordinate = get_player_coordinate(target_player, timeout=config.query_timeout)
+        coordinate = get_player_pos(target_player, timeout=config.query_timeout)
         dimension = get_dimension(get_player_dimension(target_player, timeout=config.query_timeout))
         rtext = where_is_text(target_player, coordinate, dimension)
     except Exception as exc:
@@ -27,7 +34,7 @@ def where_is(source: CommandSource, target_player: str, parameter: str = '-'):
         return
 
     if 'a' in para_list:
-        gl_server.broadcast(rtext)
+        say(rtext)
         if config.highlight_time.where_is > 0:
             gl_server.execute('effect give {} minecraft:glowing {} 0 true'.format(
                 target_player, config.highlight_time.where_is))
@@ -41,7 +48,7 @@ def here(source: PlayerCommandSource):
         gl_server.logger.warning(ntr('warn.duplicated_here'))
         return
     try:
-        coordinate = get_player_coordinate(source.player, timeout=config.query_timeout)
+        coordinate = get_player_pos(source.player, timeout=config.query_timeout)
         dimension = get_dimension(get_player_dimension(source.player, timeout=config.query_timeout))
         rtext = where_is_text(source.player, coordinate, dimension)
     except Exception as exc:
@@ -49,7 +56,7 @@ def here(source: PlayerCommandSource):
         gl_server.logger.exception('Unexpected exception occurred while broadcasting player location')
         return
 
-    gl_server.broadcast(rtext)
+    say(rtext)
     if config.highlight_time.here > 0:
         gl_server.execute('effect give {} minecraft:glowing {} 0 true'.format(
             source.player, config.highlight_time.here))
@@ -76,7 +83,7 @@ def coordinate_text(x: float, y: float, z: float, dimension: Dimension):
         return coord.h(dimension.get_rtext())
 
 
-def where_is_text(target_player: str, pos: Coordinate, dim: Dimension) -> RTextBase:
+def where_is_text(target_player: str, pos: Position, dim: Dimension) -> RTextBase:
     """
     Main text converter from TISUnion/Here(http://github.com/TISUnion/Here)
     Licensed under GNU General Public License v3.0
@@ -119,29 +126,78 @@ def where_is_text(target_player: str, pos: Coordinate, dim: Dimension) -> RTextB
     return texts
 
 
+# Should be run in new thread
+def get_player_pos(player: str, *, timeout: Optional[float] = None) -> Position:
+    pos = get_player_info(player, 'Pos', timeout=timeout)
+    if pos is None:
+        raise ValueError('Fail to query the coordinate of player {}'.format(player))
+    return Position(x=float(pos[0]), y=float(pos[1]), z=float(pos[2]))
+
+
+# Should be run in new thread
+def say(text: Union[str, RTextBase]):
+    if config.ocd:
+        if config.broadcast_to_console:
+            gl_server.broadcast(text)
+        else:
+            gl_server.say(text)
+    else:
+        if config.broadcast_to_console:
+            for line in RTextBase.from_any(text).to_colored_text().splitlines():
+                gl_server.logger.info(line)
+        current_amount, max_amount, player_list = get_server_player_list(timeout=config.query_timeout)
+        if current_amount >= 1:
+            for player in player_list:
+                gl_server.tell(player, text)
+
+
+def on_user_info(server: PluginServerInterface, info: Info):
+    if config.enable_here and config.enable_inline_here:
+        source = info.get_command_source()
+        if source.has_permission(config.permission_requirements.here) and isinstance(source, PlayerCommandSource):
+            args = info.content.split(' ')
+            for prefix in config.command_prefix.here_prefixes:
+                if prefix in args:
+                    here(source)
+                    break
+
+
+def is_available_para(string: str):
+    arg_list = list(string)
+    if arg_list.pop(0) != '-' or len(arg_list) == 0:
+        return False
+    if 'a' in arg_list:
+        arg_list.remove('a')
+    if 's' in arg_list:
+        arg_list.remove('s')
+    if len(arg_list) != 0:
+        return False
+    return True
+
+
 def register_commands(server: PluginServerInterface):
     if config.enable_where_is:
         server.register_command(
             Literal(config.command_prefix.where_is_prefixes).then(
                 QuotableText("player").requires(
-                    config.permission_requirements.query_is_allowed
+                    config.permission_requirements.query_is_allowed, lambda: tr('err.perm_denied')
                 ).runs(
                     lambda src, ctx: where_is(src, ctx['player'])).then(
-                    QuotableText('parameter').requires(
-                        config.permission_requirements.is_admin
+                    QuotableText('args').requires(
+                        config.permission_requirements.is_admin, lambda: tr('err.perm_denied')
                     ).requires(
-                        lambda src, ctx: ctx['parameter'].startswith('-')
+                        lambda src, ctx: is_available_para(ctx['args']), lambda: tr('err.invalid_args')
                     ).runs(
-                        lambda src, ctx: where_is(src, ctx['player'], ctx['parameter'])
+                        lambda src, ctx: where_is(src, ctx['player'], ctx['args'])
                     )
                 )
             )
         )
 
-    if config.enable_here:
+    if config.enable_here and not config.enable_inline_here:
         server.register_command(
             Literal(config.command_prefix.here_prefixes).requires(
-                config.permission_requirements.broadcast_is_allowed
+                config.permission_requirements.broadcast_is_allowed, lambda: tr('err.perm_denied')
             ).runs(lambda src: here(src))
         )
 

@@ -3,7 +3,8 @@ from mcdreforged.api.types import CommandSource, PlayerCommandSource, PluginServ
 from enum import Enum
 from typing import List, Union, Dict
 
-from where_is.globals import gl_server, ntr
+from where_is.utils import ntr
+from where_is.constants import gl_server, OVERWORLD_SHORT, NETHER_SHORT, END_SHORT, REG_TO_ID
 
 
 class PermissionReq(Serializable):
@@ -75,12 +76,6 @@ class CommandPrefix(Serializable):
         return self.here
 
 
-class DimensionTranslationMappings(dict, Serializable):
-    overworld: str = 'Overworld'
-    the_nether: str = 'Nether'
-    the_end: str = 'The End'
-
-
 class HighlightTimePreference(Serializable):
     where_is: int = 0
     here: int = 15
@@ -89,26 +84,36 @@ class HighlightTimePreference(Serializable):
 class Config(Serializable):
     enable_here: bool = True
     enable_where_is: bool = True
+    enable_inline_here: bool = False
     command_prefix: CommandPrefix = CommandPrefix.get_default()
+    broadcast_to_console: bool = True
     permission_requirements: PermissionReq = PermissionReq.get_default()
     highlight_time: HighlightTimePreference = HighlightTimePreference.get_default()
     display_waypoints: DisplayWaypoints = DisplayWaypoints.get_default()
     query_timeout: int = 3
     click_to_teleport: bool = True
     location_protection: LocationProtection = LocationProtection.get_default()
-    dimension_translation_mode: TranslationMode = TranslationMode.minecraft
+    dimension_translation_mode: TranslationMode = TranslationMode.mcdr
     custom_dimension_name: Dict[str, Dict[str, str]] = {
         "en_us": {
-            "overworld": "Overworld",
-            "the_nether": "Nether",
-            "the_end": "The End"
+            OVERWORLD_SHORT: "Overworld",
+            NETHER_SHORT: "Nether",
+            END_SHORT: "The End"
         },
         "zh_cn": {
-            "overworld": "主世界",
-            "the_nether": "下界",
-            "the_end": "末地"
+            OVERWORLD_SHORT: "主世界",
+            NETHER_SHORT: "下界",
+            END_SHORT: "末地"
         }
     }
+    custom_vanilla_translation_key: Dict[str, str] = {
+        OVERWORLD_SHORT: 'createWorld.customize.preset.overworld',
+        NETHER_SHORT: 'advancements.nether.root.title',
+        END_SHORT: 'advancements.end.root.title'
+    }
+    # Enable this option will result in invalid MCDR language preference while calling "!!here"
+    # But enable this may relieve the emotion of code OCD patients xD
+    here_use_broadcast: bool
 
     @classmethod
     def load(cls) -> 'Config':
@@ -131,6 +136,15 @@ class Config(Serializable):
             if len(missing) > 0:
                 gl_server.logger.info(ntr('cfg.vanilla_dim_missed', lang, ', '.join(missing)))
 
+        missing = []
+        for key, value in cls.get_default().custom_vanilla_translation_key.items():
+            if key not in cfg.custom_vanilla_translation_key.keys():
+                cfg.custom_vanilla_translation_key[key] = value
+                requires_save = True
+                missing.append(key)
+        if len(missing) > 0:
+            gl_server.logger.info(ntr('cfg.dim_key_missed', ', '.join(missing)))
+
         if requires_save:
             gl_server.save_config_simple(cfg)
         return cfg
@@ -138,6 +152,20 @@ class Config(Serializable):
     @property
     def translate_dim_with_mcdr(self):
         return self.dimension_translation_mode.value
+
+    def get_translation_key_mappings(self):
+        ret = {}
+        for key, value in self.custom_vanilla_translation_key.items():
+            id_ = REG_TO_ID.get(f"minecraft:{key}")
+            if id_ is not None:
+                ret[id_] = value
+            else:
+                ret[key] = value
+        return ret
+
+    @property
+    def ocd(self):
+        return self.serialize().get('here_use_broadcast', False)
 
 
 config = Config.load()
