@@ -4,7 +4,7 @@ from typing import Tuple
 from mcdreforged.api.rtext import RColor, RTextBase, RTextTranslation
 from where_is.config import config
 from where_is.constants import OVERWORLD, NETHER, END, REG_TO_ID, ID_TO_REG, OVERWORLD_SHORT, NETHER_SHORT, END_SHORT
-from where_is.utils import tr, dtr
+from where_is.utils import rtr, dim_tr
 from where_is.position import Position
 
 """
@@ -59,7 +59,7 @@ class LegacyDimension(Dimension):
 
     def get_rtext(self) -> RTextBase:
         if config.translate_dim_with_mcdr:
-            return tr({
+            return rtr({
                 0: f'dim.{OVERWORLD_SHORT}',
                 -1: f'dim.{NETHER_SHORT}',
                 1: f'dim.{END_SHORT}'
@@ -92,7 +92,7 @@ class CustomDimension(Dimension):
     def get_rtext(self) -> RTextBase:
         translation_key_mappings = config.get_translation_key_mappings()
         if config.translate_dim_with_mcdr or self.reg_key not in translation_key_mappings:
-            return tr(f"dim.{self.reg_key}").set_translator(dtr).set_color(self.get_color())
+            return rtr(f"dim.{self.reg_key}").set_translator(dim_tr).set_color(self.get_color())
         else:
             return RTextTranslation(config.get_translation_key_mappings()[self.reg_key], color=self.get_color())
 

@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List, Union, Dict
 
 from where_is.utils import ntr
-from where_is.constants import gl_server, OVERWORLD_SHORT, NETHER_SHORT, END_SHORT, REG_TO_ID
+from where_is.constants import psi, OVERWORLD_SHORT, NETHER_SHORT, END_SHORT, REG_TO_ID
 
 
 class PermissionReq(Serializable):
@@ -117,7 +117,7 @@ class Config(Serializable):
 
     @classmethod
     def load(cls) -> 'Config':
-        cfg = gl_server.load_config_simple(target_class=cls)
+        cfg = psi.load_config_simple(target_class=cls)
 
         for lang, mappings in cfg.custom_dimension_name.copy().items():
             for key, value in mappings.copy().items():
@@ -134,7 +134,7 @@ class Config(Serializable):
                     requires_save = True
                     missing.append(key)
             if len(missing) > 0:
-                gl_server.logger.info(ntr('cfg.vanilla_dim_missed', lang, ', '.join(missing)))
+                psi.logger.info(ntr('cfg.vanilla_dim_missed', lang, ', '.join(missing)))
 
         missing = []
         for key, value in cls.get_default().custom_vanilla_translation_key.items():
@@ -143,10 +143,10 @@ class Config(Serializable):
                 requires_save = True
                 missing.append(key)
         if len(missing) > 0:
-            gl_server.logger.info(ntr('cfg.dim_key_missed', ', '.join(missing)))
+            psi.logger.info(ntr('cfg.dim_key_missed', ', '.join(missing)))
 
         if requires_save:
-            gl_server.save_config_simple(cfg)
+            psi.save_config_simple(cfg)
         return cfg
 
     @property

@@ -1,11 +1,11 @@
 {
     "id": "where_is",
-    "version": "2.1.0+build.8",
+    "version": "2.1.1+build.9",
     "name": "Where Is",
     "description":  {
-		"en_us": "Query players' coordinates",
-		"zh_cn": "查询玩家的坐标"
-	},
+        "en_us": "Query players' coordinates",
+        "zh_cn": "查询玩家的坐标"
+    },
     "author": [
         "Ra1ny_Yuki"
     ],
