@@ -117,7 +117,7 @@ class Config(Serializable):
         XAEROS_MINIMAP: CustomClickableComponent(
             enabled=True,
             display_text='§6[+X]§r',
-            click_value="xaero_waypoint_add:{player}'s Location:{player[0]}:{x}:{y}:{z}:6:false:0:Internal_{dim.no_namespace}_waypoints",
+            click_value="xaero_waypoint_add:{player}'s Location:{player[0]}:{x}:{y}:{z}:6:false:0{dim.xaero_suffix}",
             action='run_command',
             hover_text={
                 'zh_cn': "§6Xaeros Minimap§r: 点击添加路径点",

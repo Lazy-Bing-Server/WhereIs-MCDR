@@ -25,7 +25,9 @@ def where_is(source: CommandSource, target_player: str, args: str = '-'):
             source.reply(rtr('err.not_online').set_color(RColor.red))
             return
         coordinate = get_player_pos(target_player, timeout=config.query_timeout)
-        dimension = get_dimension(get_player_dimension(target_player, timeout=config.query_timeout))
+        target_dim = get_player_dimension(target_player, timeout=config.query_timeout)
+        debug(str(target_dim))
+        dimension = get_dimension(target_dim)
         rtext = where_is_text(target_player, coordinate, dimension)
     except Exception as exc:
         source.reply(rtr("err.generic", str(exc)).set_color(RColor.red))
@@ -44,7 +46,7 @@ def where_is(source: CommandSource, target_player: str, args: str = '-'):
 @named_thread
 def here(source: PlayerCommandSource):
     if psi.get_plugin_metadata('here') is not None:
-        psi.logger.warning(ntr('warn.duplicated_here'))
+        psi.logger.warning(rtr('warn.duplicated_here'))
         return
     try:
         coordinate = get_player_pos(source.player, timeout=config.query_timeout)
@@ -104,7 +106,7 @@ def where_is_text(target_player: str, pos: Position, dim: Dimension) -> RTextBas
     if len(config.custom_clickable_components) > 0:
         kwargs = dict(
             player=target_player_text,
-            dim=dim, x=x, y=y, z=z
+            dim=dim, x=int(x), y=int(y), z=int(z)
         )
         for item in config.custom_clickable_components.values():
             if not item.enabled:

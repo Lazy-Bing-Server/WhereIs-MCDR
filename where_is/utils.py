@@ -63,7 +63,7 @@ def ntr(
         except (KeyError, ValueError):
             languages = []
             for item in (_mcdr_tr_language, fallback_language, 'en_us'):
-                if item not in languages:
+                if item not in languages and item is not None:
                     languages.append(item)
             languages = ', '.join(languages)
             if _mcdr_tr_allow_failure:
@@ -120,9 +120,9 @@ def get_translatable_rtext(
         **kwargs
 ) -> Optional[MessageText]:
     require_rtext = (
-        any(map(lambda item: isinstance(item, RTextBase), args))
+        any(map((lambda item: isinstance(item, RTextBase)), args))
         or
-        any(map(lambda k, v: isinstance(v, RTextBase), kwargs))
+        any(map((lambda item: isinstance(item[1], RTextBase)), kwargs.items()))
     )
 
     def format_str(fmt: str) -> MessageText:

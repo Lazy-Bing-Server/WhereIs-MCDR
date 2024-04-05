@@ -40,9 +40,8 @@ class Dimension(ABC):
         ...
 
     @property
-    @abstractmethod
     def no_namespace(self):
-        ...
+        return self.get_reg_key().split(':', 1)[1]
 
     @abstractmethod
     def get_rtext(self) -> RTextBase:
@@ -54,6 +53,11 @@ class Dimension(ABC):
 
     @abstractmethod
     def get_opposite(self, pos: Position) -> Tuple['Dimension', Position]:
+        ...
+
+    @property
+    @abstractmethod
+    def xaero_suffix(self):
         ...
 
     def __repr__(self):
@@ -80,7 +84,11 @@ class LegacyDimension(Dimension):
 
     @property
     def no_namespace(self):
-        return ''.split(':', 1)[1]
+        return self.get_reg_key().replace('minecraft:', '')
+
+    @property
+    def xaero_suffix(self):
+        return f":Internal_{self.no_namespace}_waypoints"
 
     def get_rtext(self) -> RTextBase:
         if config.translate_dim_with_mcdr:
@@ -128,12 +136,12 @@ class CustomDimension(Dimension):
     def has_opposite(self) -> bool:
         return False
 
-    @property
-    def no_namespace(self):
-        return ''.split(':', 1)[1]
-
     def get_opposite(self, pos: Position) -> Tuple['Dimension', Position]:
         raise RuntimeError('Custom dimension {} does not have opposite dimension'.format(self.reg_key))
+
+    @property
+    def xaero_suffix(self):
+        return ''
 
 
 def get_dimension(text: str) -> Dimension:
@@ -146,6 +154,6 @@ def get_dimension(text: str) -> Dimension:
         return LegacyDimension(int(text))
     except:
         pass
-    if text in REG_TO_ID:
+    if text in REG_TO_ID.keys():
         return LegacyDimension(REG_TO_ID[text])
     return CustomDimension(text)
