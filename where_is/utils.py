@@ -1,7 +1,6 @@
 import inspect
 import functools
-import threading
-from typing import Optional, Callable, Union
+from typing import Optional, Callable, Union, Dict
 
 from mcdreforged.api.decorator import FunctionThread
 from mcdreforged.api.rtext import RTextBase, RTextMCDRTranslation
@@ -10,12 +9,22 @@ from where_is.constants import psi, DEBUG
 
 MessageText: type = Union[str, RTextBase]
 TRANSLATION_KEY_PREFIX = psi.get_self_metadata().id + '.'
+Translatable = Union[str, Dict[str, str]]
+
+
+class PlayerNameString(str):
+    @property
+    def possessive(self):
+        if self.endswith("s"):
+            return self + "'"
+        else:
+            return self + "'s"
 
 
 # Utilities
-def rtr(translation_key: str, *args, with_prefix: bool = True, **kwargs) -> RTextMCDRTranslation:
-    if with_prefix and not translation_key.startswith(TRANSLATION_KEY_PREFIX):
-        translation_key = f"{TRANSLATION_KEY_PREFIX}{translation_key}"
+def rtr(translation_key: str, *args, _lb_rtr_prefix: str = TRANSLATION_KEY_PREFIX, **kwargs) -> RTextMCDRTranslation:
+    if not translation_key.startswith(_lb_rtr_prefix):
+        translation_key = f"{_lb_rtr_prefix}{translation_key}"
     return RTextMCDRTranslation(translation_key, *args, **kwargs).set_translator(ntr)
 
 
@@ -24,15 +33,21 @@ def debug(msg: Union[str, RTextBase]):
 
 
 def ntr(
-        translation_key: str, *args, language: Optional[str] = None, _mcdr_tr_language: Optional[str] = None,
-        allow_failure: bool = True, _default_fallback: Optional[MessageText] = None, log_error_message: bool = True, **kwargs
+        translation_key: str,
+        *args,
+        _mcdr_tr_language: Optional[str] = None,
+        _mcdr_tr_allow_failure: bool = True,
+        _lb_tr_default_fallback: Optional[MessageText] = None,
+        _lb_tr_log_error_message: bool = True,
+        **kwargs
 ) -> MessageText:
-    if language is not None and _mcdr_tr_language is None:
-        _mcdr_tr_language = language
     try:
         return psi.tr(
-            translation_key, *args, language=_mcdr_tr_language,
-            _mcdr_tr_language=_mcdr_tr_language, allow_failure=False, **kwargs
+            translation_key,
+            *args,
+            _mcdr_tr_language=_mcdr_tr_language,
+            _mcdr_tr_allow_failure=False,
+            **kwargs
         )
     except (KeyError, ValueError):
         fallback_language = psi.get_mcdr_language()
@@ -40,8 +55,10 @@ def ntr(
             if fallback_language == 'en_us':
                 raise KeyError(translation_key)
             return psi.tr(
-                translation_key, *args, _mcdr_tr_language='en_us',
-                language='en_us', allow_failure=False, **kwargs
+                translation_key, *args,
+                _mcdr_tr_language='en_us',
+                _mcdr_tr_allow_failure=False,
+                **kwargs
             )
         except (KeyError, ValueError):
             languages = []
@@ -49,26 +66,31 @@ def ntr(
                 if item not in languages:
                     languages.append(item)
             languages = ', '.join(languages)
-            if allow_failure:
-                if log_error_message:
+            if _mcdr_tr_allow_failure:
+                if _lb_tr_log_error_message:
                     psi.logger.error(f'Error translate text "{translation_key}" to language {languages}')
-                if _default_fallback is None:
+                if _lb_tr_default_fallback is None:
                     return translation_key
-                return _default_fallback
+                return _lb_tr_default_fallback
             else:
                 raise KeyError(f'Translation key "{translation_key}" not found with language {languages}')
 
 
-def dim_tr(key: str, *args, lang: Optional[str] = None, allow_failure: bool = True, **kwargs):
-    try:
-        return ntr(key, *args, lang=lang, allow_failure=False, **kwargs)
-    except Exception as exc:
-        if not allow_failure:
-            raise exc
-        if key.startswith('where_is.dim.'):
-            return key[13:]
-        else:
-            return key
+def ktr(
+        translation_key: str,
+        *args,
+        _lb_tr_default_fallback: Optional[MessageText] = None,
+        _lb_tr_log_error_message: bool = False,
+        _lb_rtr_prefix: str = TRANSLATION_KEY_PREFIX,
+        **kwargs
+) -> RTextMCDRTranslation:
+    return rtr(
+        translation_key, *args,
+        _lb_rtr_prefix=_lb_rtr_prefix,
+        _lb_tr_log_error_message=_lb_tr_log_error_message,
+        _lb_tr_default_fallback=translation_key if _lb_tr_default_fallback is None else _lb_tr_default_fallback,
+        **kwargs
+    )
 
 
 def to_camel_case(string: str, divider: str = ' ', upper: bool = True) -> str:
@@ -89,7 +111,34 @@ def capitalize(string: str) -> str:
 
 
 def get_thread_prefix() -> str:
-    return to_camel_case(psi.get_self_metadata().name, divider=' ') + '_'
+    return to_camel_case(psi.get_self_metadata().name, divider=' ') + '@'
+
+
+def get_translatable_rtext(
+        serialized_translate: Optional[Translatable],
+        *args,
+        **kwargs
+) -> Optional[MessageText]:
+    require_rtext = (
+        any(map(lambda item: isinstance(item, RTextBase), args))
+        or
+        any(map(lambda k, v: isinstance(v, RTextBase), kwargs))
+    )
+
+    def format_str(fmt: str) -> MessageText:
+        if require_rtext:
+            return RTextBase.format(fmt, *args, **kwargs)
+        return fmt.format(*args, **kwargs)
+
+    if serialized_translate is None:
+        return None
+    elif isinstance(serialized_translate, dict):
+        mapping = serialized_translate.copy()
+        for key, value in serialized_translate.items():
+            mapping[key] = format_str(value)
+        return RTextMCDRTranslation.from_translation_dict(mapping)
+    else:
+        return format_str(serialized_translate)
 
 
 def named_thread(arg: Optional[Union[str, Callable]] = None) -> Callable:
@@ -97,10 +146,7 @@ def named_thread(arg: Optional[Union[str, Callable]] = None) -> Callable:
         @functools.wraps(func)
         def wrap(*args, **kwargs):
             def try_func():
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    psi.logger.exception('Error running thread {}'.format(threading.current_thread().name), exc_info=e)
+                return func(*args, **kwargs)
 
             prefix = get_thread_prefix()
             thread = FunctionThread(target=try_func, args=[], kwargs={}, name=prefix + thread_name)

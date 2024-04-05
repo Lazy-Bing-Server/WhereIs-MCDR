@@ -1,11 +1,12 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Tuple
 
 from mcdreforged.api.rtext import RColor, RTextBase, RTextTranslation
+
 from where_is.config import config
 from where_is.constants import OVERWORLD, NETHER, END, REG_TO_ID, ID_TO_REG, OVERWORLD_SHORT, NETHER_SHORT, END_SHORT
-from where_is.utils import rtr, dim_tr
 from where_is.position import Position
+from where_is.utils import rtr, TRANSLATION_KEY_PREFIX, ktr
 
 """
 Copied from TISUnion/Here
@@ -16,12 +17,6 @@ Licensed under GNU General Public License v3.0
 
 
 class Dimension(ABC):
-    def get_id(self) -> str:  # 0
-        raise NotImplementedError()
-
-    def get_reg_key(self) -> str:  # minecraft:overworld
-        raise NotImplementedError()
-
     def get_color(self) -> RColor:
         return {
             OVERWORLD: RColor.dark_green,
@@ -36,14 +31,36 @@ class Dimension(ABC):
             END: RColor.light_purple
         }.get(self.get_reg_key(), RColor.white)
 
+    @abstractmethod
+    def get_id(self) -> str:  # 0
+        ...
+
+    @abstractmethod
+    def get_reg_key(self) -> str:  # minecraft:overworld
+        ...
+
+    @property
+    @abstractmethod
+    def no_namespace(self):
+        ...
+
+    @abstractmethod
     def get_rtext(self) -> RTextBase:
-        raise NotImplementedError()
+        ...
 
+    @abstractmethod
     def has_opposite(self) -> bool:
-        raise NotImplementedError()
+        ...
 
+    @abstractmethod
     def get_opposite(self, pos: Position) -> Tuple['Dimension', Position]:
-        raise NotImplementedError()
+        ...
+
+    def __repr__(self):
+        return self.get_reg_key()
+
+    def __str__(self):
+        return repr(self)
 
 
 class LegacyDimension(Dimension):
@@ -56,6 +73,14 @@ class LegacyDimension(Dimension):
 
     def get_reg_key(self) -> str:
         return ID_TO_REG[self.dim_id]
+
+    @property
+    def id(self):
+        return self.get_id()
+
+    @property
+    def no_namespace(self):
+        return ''.split(':', 1)[1]
 
     def get_rtext(self) -> RTextBase:
         if config.translate_dim_with_mcdr:
@@ -81,10 +106,14 @@ class LegacyDimension(Dimension):
 
 class CustomDimension(Dimension):
     def __init__(self, reg_key: str):
-        self.reg_key = reg_key
+        self.reg_key = str(reg_key)
 
     def get_id(self) -> str:
         raise RuntimeError('Custom dimension {} does not have integer id'.format(self.reg_key))
+
+    @property
+    def id(self):
+        return self.get_reg_key()
 
     def get_reg_key(self) -> str:
         return self.reg_key
@@ -92,12 +121,16 @@ class CustomDimension(Dimension):
     def get_rtext(self) -> RTextBase:
         translation_key_mappings = config.get_translation_key_mappings()
         if config.translate_dim_with_mcdr or self.reg_key not in translation_key_mappings:
-            return rtr(f"dim.{self.reg_key}").set_translator(dim_tr).set_color(self.get_color())
+            return ktr(self.reg_key, _lb_rtr_prefix=f"{TRANSLATION_KEY_PREFIX}dim.").set_color(self.get_color())
         else:
             return RTextTranslation(config.get_translation_key_mappings()[self.reg_key], color=self.get_color())
 
     def has_opposite(self) -> bool:
         return False
+
+    @property
+    def no_namespace(self):
+        return ''.split(':', 1)[1]
 
     def get_opposite(self, pos: Position) -> Tuple['Dimension', Position]:
         raise RuntimeError('Custom dimension {} does not have opposite dimension'.format(self.reg_key))

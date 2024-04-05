@@ -15,3 +15,5 @@ ID_TO_REG = dict([(v, k) for k, v in REG_TO_ID.items()])
 
 psi = ServerInterface.get_instance().as_plugin_server_interface()
 DEBUG = False
+VOXELMAP = 'voxelmap'
+XAEROS_MINIMAP = 'xaeros_minimap'

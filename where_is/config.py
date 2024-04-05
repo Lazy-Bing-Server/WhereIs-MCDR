@@ -1,10 +1,9 @@
-from mcdreforged.api.utils import Serializable
-from mcdreforged.api.types import CommandSource, PlayerCommandSource, PluginServerInterface
+from mcdreforged.api.all import *
 from enum import Enum
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional, Any
 
 from where_is.utils import ntr
-from where_is.constants import psi, OVERWORLD_SHORT, NETHER_SHORT, END_SHORT, REG_TO_ID
+from where_is.constants import psi, OVERWORLD_SHORT, NETHER_SHORT, END_SHORT, REG_TO_ID, VOXELMAP, XAEROS_MINIMAP
 
 
 class PermissionReq(Serializable):
@@ -81,6 +80,20 @@ class HighlightTimePreference(Serializable):
     here: int = 15
 
 
+class CustomClickableComponent(Serializable):
+    enabled: bool = True
+    display_text: Union[str, Dict[str, str]] = '[+V]'
+    action: str = 'suggest_command'
+    click_value: Optional[str] = None
+    hover_text: Optional[Union[str, Dict[str, str]]] = None
+
+    def get_display_text(self, *args, **kwargs):
+        if isinstance(self.display_text, dict):
+            return RTextMCDRTranslation.from_translation_dict(
+                translation_dict=self.display_text
+            )
+
+
 class Config(Serializable):
     enable_here: bool = True
     enable_where_is: bool = True
@@ -89,7 +102,29 @@ class Config(Serializable):
     broadcast_to_console: bool = True
     permission_requirements: PermissionReq = PermissionReq.get_default()
     highlight_time: HighlightTimePreference = HighlightTimePreference.get_default()
-    display_waypoints: DisplayWaypoints = DisplayWaypoints.get_default()
+    display_waypoints: DisplayWaypoints
+    custom_clickable_components: Optional[Dict[str, CustomClickableComponent]] = {
+        VOXELMAP: CustomClickableComponent(
+            enabled=True,
+            display_text='§b[+V]§r',
+            click_value='/newWaypoint x:{x}, y:{y}, z:{z}, dim:{dim}',
+            action='run_command',
+            hover_text={
+                'zh_cn': "§bVoxelmap§r: 点此以高亮坐标点, 或者 Ctrl 点击添加路径点",
+                'en_us': "§bVoxelmap§r: Click to highlight the location, or Ctrl-Click to add waypoint"
+            }
+        ),
+        XAEROS_MINIMAP: CustomClickableComponent(
+            enabled=True,
+            display_text='§6[+X]§r',
+            click_value="xaero_waypoint_add:{player}'s Location:{player[0]}:{x}:{y}:{z}:6:false:0:Internal_{dim.no_namespace}_waypoints",
+            action='run_command',
+            hover_text={
+                'zh_cn': "§6Xaeros Minimap§r: 点击添加路径点",
+                'en_us': "§6Xaeros Minimap§r: Click to add waypoint"
+            }
+        )
+    }
     query_timeout: int = 3
     click_to_teleport: bool = True
     location_protection: LocationProtection = LocationProtection.get_default()
@@ -115,9 +150,22 @@ class Config(Serializable):
     # But enable this may relieve the emotion of code OCD patients xD
     here_use_broadcast: bool
 
+    def get(self, key: str, default: Any = None):
+        if key not in self.get_field_annotations().keys():
+            return default
+        return getattr(self, key, default)
+
     @classmethod
     def load(cls) -> 'Config':
-        cfg = psi.load_config_simple(target_class=cls)
+        cfg: 'Config' = psi.load_config_simple(target_class=cls)
+        if cfg.get('display_waypoints') is not None:
+            if VOXELMAP in cfg.custom_clickable_components.keys():
+                cfg.custom_clickable_components[VOXELMAP].enabled = cfg.display_waypoints.voxelmap
+            if XAEROS_MINIMAP in cfg.custom_clickable_components.keys():
+                cfg.custom_clickable_components[XAEROS_MINIMAP].enabled = cfg.display_waypoints.xaeros_minimap
+            del cfg.display_waypoints
+            psi.save_config_simple(cfg)
+            psi.logger.info('Removed deprecated config item: display_waypoints')
 
         for lang, mappings in cfg.custom_dimension_name.copy().items():
             for key, value in mappings.copy().items():
@@ -165,7 +213,7 @@ class Config(Serializable):
 
     @property
     def ocd(self):
-        return self.serialize().get('here_use_broadcast', False)
+        return self.get('here_use_broadcast', False)
 
 
 config = Config.load()

@@ -9,7 +9,7 @@ from where_is.config import config
 from where_is.constants import psi
 from where_is.dimensions import get_dimension, Dimension, LegacyDimension
 from where_is.position import Position
-from where_is.utils import rtr, debug, ntr, named_thread
+from where_is.utils import rtr, debug, ntr, named_thread, get_translatable_rtext, PlayerNameString
 
 
 @named_thread
@@ -92,37 +92,44 @@ def where_is_text(target_player: str, pos: Position, dim: Dimension) -> RTextBas
     :return: Main RText
     """
     x, y, z = pos.x, pos.y, pos.z
+    target_player_text = PlayerNameString(target_player)
 
     # basic text: someone @ dimension [x, y, z]
-    texts = RTextList(RText(target_player, RColor.yellow), ' @ ', dim.get_rtext(), ' ',
-                      coordinate_text(x, y, z, dim))
+    texts = [
+        RText(target_player_text, RColor.yellow),
+        '@',
+        dim.get_rtext(),
+        coordinate_text(x, y, z, dim)]
 
-    if config.display_waypoints.voxelmap:
-        texts.append(' ', RText('[+V]', RColor.aqua).h(rtr('hover.voxel')).c(
-            RAction.run_command, '/newWaypoint x:{}, y:{}, z:{}, dim:{}'.format(
-                int(x), int(y), int(z), dim.get_reg_key()
+    if len(config.custom_clickable_components) > 0:
+        kwargs = dict(
+            player=target_player_text,
+            dim=dim, x=x, y=y, z=z
+        )
+        for item in config.custom_clickable_components.values():
+            if not item.enabled:
+                continue
+            texts.append(
+                RText(
+                    get_translatable_rtext(item.display_text, **kwargs)
+                ).c(
+                    RAction[item.action], item.click_value.format(**kwargs)
+                ).h(
+                    get_translatable_rtext(item.hover_text, **kwargs)
+                )
             )
-        ))
-
-    # click event to add waypoint
-    if config.display_waypoints.xaeros_minimap:
-        command = "xaero_waypoint_add:{}'s Location:{}:{}:{}:{}:6:false:0".format(
-            target_player, target_player[0], int(x), int(y), int(z))
-        if isinstance(dim, LegacyDimension):
-            command += ':Internal_{}_waypoints'.format(dim.get_reg_key().replace('minecraft:', '').strip())
-        texts.append(' ', RText('[+X]', RColor.gold).h(rtr('hover.xaero')).c(RAction.run_command, command))
 
     # coordinate conversion between overworld and nether
     if dim.has_opposite():
         oppo_dim, oppo_pos = dim.get_opposite(pos)
         arrow = RText('->', RColor.gray)
         texts.append(RText.format(
-            ' {} {}',
+            '{} {}',
             arrow.copy().h(RText.format('{} {} {}', dim.get_rtext(), arrow, oppo_dim.get_rtext())),
             coordinate_text(oppo_pos.x, oppo_pos.y, oppo_pos.z, oppo_dim)
         ))
 
-    return texts
+    return RTextBase.join(' ', texts)
 
 
 # Should be run in new thread
