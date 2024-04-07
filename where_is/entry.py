@@ -1,29 +1,120 @@
-from typing import Optional, Union
+import re
+from typing import Optional, Union, List
 
-from mcdreforged.api.command import Literal, QuotableText
-from mcdreforged.api.rtext import RColor, RTextBase, RText, RAction, RTextList
-from mcdreforged.api.types import CommandSource, PlayerCommandSource, Info, PluginServerInterface
-from minecraft_data_api import get_player_info, get_player_dimension, get_server_player_list
+from mcdreforged.api.all import *
+from minecraft_data_api import get_player_info, get_player_dimension
 
 from where_is.config import config
 from where_is.constants import psi
 from where_is.dimensions import get_dimension, Dimension, LegacyDimension
 from where_is.position import Position
-from where_is.utils import rtr, debug, ntr, named_thread
+from where_is.online_players import online_players
+from where_is.utils import rtr, debug, ntr, named_thread, MessageText
+from where_is.node import QuotableTextList
+
+
+PLAYER_LIST = 'player_list'
+SUDO_COUNT = 'sudo_count'
+ALL_COUNT = 'all_count'
+HIGHLIGHT_TIME = 'highlight_time'
+
+
+def htr(
+    translation_key: str,
+    *args,
+    prefixes: Optional[List[str]] = None,
+    suggest_prefix: Optional[str] = None,
+    **kwargs,
+) -> RTextMCDRTranslation:
+    prefixes = prefixes or [""]
+
+    def __get_regex_result(line: str):
+        pattern = r"(?<=§7){}[\S ]*?(?=§)"
+        for prefix in prefixes:
+            result = re.search(pattern.format(prefix), line)
+            if result is not None:
+                return result
+        return None
+
+    def __htr(key: str, *inner_args, **inner_kwargs) -> MessageText:
+        nonlocal suggest_prefix
+        original = ntr(key, *inner_args, **inner_kwargs)
+        processed: List[MessageText] = []
+        if not isinstance(original, str):
+            return key
+        for line in original.splitlines():
+            result = __get_regex_result(line)
+            if result is not None:
+                command = result.group().strip() + " "
+                if suggest_prefix is not None:
+                    command = suggest_prefix.strip() + " " + command
+                processed.append(
+                    RText(line)
+                    .c(RAction.suggest_command, command)
+                    .h(rtr("help.suggest", command))
+                )
+
+                debug(f'Rich help line: "{line}"')
+                debug(
+                    "Suggest prefix: {}".format(
+                        f'"{suggest_prefix}"'
+                        if isinstance(suggest_prefix, str)
+                        else suggest_prefix
+                    )
+                )
+                debug(f'Suggest command: "{command}"')
+            else:
+                processed.append(line)
+        return RTextBase.join("\n", processed)
+
+    return rtr(translation_key, *args, **kwargs).set_translator(__htr)
 
 
 @named_thread
-def where_is(source: CommandSource, target_player: str, args: str = '-'):
-    para_list = list(args[1:])
-    if 's' not in para_list and not config.location_protection.is_allowed(source, target_player):
+def where_is(source: CommandSource, context: CommandContext):
+    player_list = context.get(PLAYER_LIST, [])
+    sudo = context.get(SUDO_COUNT, 0) > 0
+    to_all = context.get(ALL_COUNT, 0) > 0
+    highlight_time = context.get(HIGHLIGHT_TIME)
+    if len(player_list) == 0:
+        where_is_help(source, context)
+    for player in player_list:
+        _where_is(source, player, sudo=sudo, to_all=to_all, highlight_time=highlight_time)
+
+
+def where_is_help(source: CommandSource, context: CommandContext):
+    current_prefix = context.command.split(' ')[0]
+    meta = psi.get_self_metadata()
+    version = meta.version
+    version_str = ".".join([str(n) for n in version.component])
+    if version.pre is not None:
+        version_str += "-" + str(version.pre)
+    source.reply(htr(
+        'help.detailed',
+        vris=current_prefix,
+        here=config.command_prefix.here_prefixes[0],
+        name=meta.name,
+        ver=version_str,
+        prefixes=[current_prefix, config.command_prefix.here_prefixes[0]]
+    ))
+
+
+def _where_is(
+        source: CommandSource,
+        target_player: str,
+        sudo: bool = False,
+        to_all: bool = False,
+        highlight_time: Optional[int] = None
+):
+    highlight_time = highlight_time or config.highlight_time.where_is
+    debug("Highlight time: {} s".format(highlight_time))
+    if not sudo and not config.location_protection.is_allowed(source, target_player):
         source.reply(rtr('err.player_protected').set_color(RColor.red))
         return
+    if target_player not in online_players.get_player_list():
+        source.reply(rtr('err.not_online', target_player).set_color(RColor.red))
+        return
     try:
-        player_list = get_server_player_list(timeout=config.query_timeout)[2]
-        debug(str(player_list))
-        if target_player not in tuple([] if player_list is None else player_list):
-            source.reply(rtr('err.not_online').set_color(RColor.red))
-            return
         coordinate = get_player_pos(target_player, timeout=config.query_timeout)
         dimension = get_dimension(get_player_dimension(target_player, timeout=config.query_timeout))
         rtext = where_is_text(target_player, coordinate, dimension)
@@ -32,17 +123,21 @@ def where_is(source: CommandSource, target_player: str, args: str = '-'):
         psi.logger.exception('Unexpected exception occurred while querying player location')
         return
 
-    if 'a' in para_list:
+    if to_all:
         say(rtext)
-        if config.highlight_time.where_is > 0:
-            psi.execute('effect give {} minecraft:glowing {} 0 true'.format(
-                target_player, config.highlight_time.where_is))
+        if highlight_time > 0:
+            psi.execute(
+                f'effect give {target_player} minecraft:glowing {highlight_time} 0 true'
+            )
     else:
         source.reply(rtext)
 
 
 @named_thread
-def here(source: PlayerCommandSource):
+def here(source: PlayerCommandSource, context: Optional[CommandContext] = None):
+    highlight_time = config.highlight_time.here
+    if context is not None:
+        highlight_time = context.get(HIGHLIGHT_TIME, highlight_time)
     if psi.get_plugin_metadata('here') is not None:
         psi.logger.warning(ntr('warn.duplicated_here'))
         return
@@ -56,21 +151,13 @@ def here(source: PlayerCommandSource):
         return
 
     say(rtext)
-    if config.highlight_time.here > 0:
-        psi.execute('effect give {} minecraft:glowing {} 0 true'.format(
-            source.player, config.highlight_time.here))
+    if highlight_time > 0:
+        psi.execute(
+            f'effect give {source.player} minecraft:glowing {config.highlight_time.here} 0 true'
+        )
 
 
 def coordinate_text(x: float, y: float, z: float, dimension: Dimension):
-    """
-    Coordinate text converter from TISUnion/Here(http://github.com/TISUnion/Here)
-    Licensed under GNU General Public License v3.0
-    :param x: Coordinate on X axis
-    :param y: Coordinate on Y axis
-    :param z: Coordinate on Z axis
-    :param dimension: Converted dimension objects
-    :return: RText object of this coordinates
-    """
     coord = RText('[{}, {}, {}]'.format(int(x), int(y), int(z)), dimension.get_coordinate_color())
     if config.click_to_teleport:
         return (
@@ -83,14 +170,6 @@ def coordinate_text(x: float, y: float, z: float, dimension: Dimension):
 
 
 def where_is_text(target_player: str, pos: Position, dim: Dimension) -> RTextBase:
-    """
-    Main text converter from TISUnion/Here(http://github.com/TISUnion/Here)
-    Licensed under GNU General Public License v3.0
-    :param target_player: Target player name string
-    :param pos: Coordinate object
-    :param dim: Dimension object
-    :return: Main RText
-    """
     x, y, z = pos.x, pos.y, pos.z
 
     # basic text: someone @ dimension [x, y, z]
@@ -133,7 +212,6 @@ def get_player_pos(player: str, *, timeout: Optional[float] = None) -> Position:
     return Position(x=float(pos[0]), y=float(pos[1]), z=float(pos[2]))
 
 
-# Should be run in new thread
 def say(text: Union[str, RTextBase]):
     if config.ocd:
         if config.broadcast_to_console:
@@ -144,8 +222,9 @@ def say(text: Union[str, RTextBase]):
         if config.broadcast_to_console:
             for line in RTextBase.from_any(text).to_colored_text().splitlines():
                 psi.logger.info(line)
-        current_amount, max_amount, player_list = get_server_player_list(timeout=config.query_timeout)
-        if current_amount >= 1:
+        # Tell each player separately to apply language preference
+        player_list = online_players.get_player_list()
+        if len(player_list) >= 1:
             for player in player_list:
                 psi.tell(player, text)
 
@@ -153,7 +232,10 @@ def say(text: Union[str, RTextBase]):
 def on_user_info(server: PluginServerInterface, info: Info):
     if config.enable_here and config.enable_inline_here:
         source = info.get_command_source()
-        if source.has_permission(config.permission_requirements.here) and isinstance(source, PlayerCommandSource):
+        if (
+            source.has_permission(config.permission_requirements.here)
+            and isinstance(source, PlayerCommandSource)
+        ):
             args = info.content.split(' ')
             for prefix in config.command_prefix.here_prefixes:
                 if prefix in args:
@@ -161,44 +243,44 @@ def on_user_info(server: PluginServerInterface, info: Info):
                     break
 
 
-def is_available_para(string: str):
-    arg_list = list(string)
-    if arg_list.pop(0) != '-' or len(arg_list) == 0:
-        return False
-    if 'a' in arg_list:
-        arg_list.remove('a')
-    if 's' in arg_list:
-        arg_list.remove('s')
-    if len(arg_list) != 0:
-        return False
-    return True
-
-
 def register_commands(server: PluginServerInterface):
     if config.enable_where_is:
-        server.register_command(
-            Literal(config.command_prefix.where_is_prefixes).then(
-                QuotableText("player").requires(
-                    config.permission_requirements.query_is_allowed, lambda: rtr('err.perm_denied')
-                ).runs(
-                    lambda src, ctx: where_is(src, ctx['player'])).then(
-                    QuotableText('args').requires(
-                        config.permission_requirements.is_admin, lambda: rtr('err.perm_denied')
-                    ).requires(
-                        lambda src, ctx: is_available_para(ctx['args']), lambda: rtr('err.invalid_args')
-                    ).runs(
-                        lambda src, ctx: where_is(src, ctx['player'], ctx['args'])
-                    )
-                )
+        where_is_root = Literal(config.command_prefix.where_is_prefixes).requires(
+            config.permission_requirements.query_is_allowed
+        ).runs(where_is)
+        where_is_root.then(
+            QuotableTextList('player', PLAYER_LIST).suggests(
+                lambda: online_players.get_player_list()
+            ).redirects(where_is_root)
+        )
+        where_is_root.then(
+            CountingLiteral({"-s", "--sudo"}, SUDO_COUNT).requires(
+                config.permission_requirements.is_admin
+            ).redirects(where_is_root)
+        )
+        where_is_root.then(
+            CountingLiteral({"-a", "--all"}, ALL_COUNT).requires(
+                config.permission_requirements.is_admin
+            ).redirects(where_is_root)
+        )
+        where_is_root.then(
+            Literal({"-h", "--highlight"}).then(
+                Integer(HIGHLIGHT_TIME).redirects(where_is_root)
             )
         )
+        server.register_command(where_is_root)
 
     if config.enable_here and not config.enable_inline_here:
-        server.register_command(
-            Literal(config.command_prefix.here_prefixes).requires(
-                config.permission_requirements.broadcast_is_allowed, lambda: rtr('err.perm_denied')
-            ).runs(lambda src: here(src))
+        here_root = Literal(config.command_prefix.here_prefixes).requires(
+            config.permission_requirements.broadcast_is_allowed,
+            lambda: rtr('err.perm_denied')
+        ).runs(here)
+        here_root.then(
+            Literal('highlight').then(
+                Integer(HIGHLIGHT_TIME).redirects(here_root)
+            )
         )
+        server.register_command(here_root)
 
 
 def register_help_messages(server: PluginServerInterface):
@@ -219,6 +301,11 @@ def register_customized_translations(server: PluginServerInterface):
 
 
 def on_load(server: PluginServerInterface, prev_modules):
+    online_players.register_event_listeners()
     register_help_messages(server)
     register_customized_translations(server)
     register_commands(server)
+    for pre in config.command_prefix.here_prefixes:
+        server.register_help_message(pre, rtr('help.here'))
+    for pre in config.command_prefix.where_is_prefixes:
+        server.register_help_message(pre, rtr('help.vris'))

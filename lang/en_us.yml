@@ -1,7 +1,24 @@
 where_is:
+  help:
+    detailed: |
+      §7--------§9 {name} §rv{ver} §7--------§r
+      Query other player's location
+      §d[Basic usage]§r
+      §7{vris} §5<player>§3 [optional]§r Query player's location
+      §7{here} §3[optional]§r §rBroadcast your own location
+      §d[Advanced usage]§r
+      Argument §5<player>§r allows multiple players
+      Argument §3[optional]§r for command §7{vris}§r:
+      §8> §b-a§7, §b--all§r Broadcast player's location
+      §8> §b-s§7, §b--sudo§r Allow to query protected player
+      Argument §3[optional]§r for both commands:
+      §8> §b-h§7, §b--highlight§6 <duration>§r Set highlight time
+    vris: Query location of other player
+    here: Broadcast your own location
+    suggest: Click to fill command §7{}
   err:
     generic: "Error occurred: {}"
-    not_online: "Required player is not online"
+    not_online: "Required player {} is not online"
     perm_denied: "Permission denied"
     invalid_args: "Invalid argument"
   warn:

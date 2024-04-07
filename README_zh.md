@@ -9,25 +9,45 @@ Where Is
 
 [MinecraftDataAPI](https://github.com/MCDReforged/MinecraftDataAPI/)
 
-[MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.1.3
+[MCDReforged](https://github.com/Fallen-Breath/MCDReforged) >= 2.12.0
+
+> 于 2.2 版本变更: 
+> 
+> 不再支持 MCDR 2.11 及更早版本
 
 ## 指令
 
 1. `!!whereis` 或者 `!!vris`（可在配置文件中修改）：显示一个其他玩家的坐标。
 
-指令格式: `!!whereis <玩家> [参数(可选)]`
+指令格式: `!!whereis <玩家> [参数(可选)]` （可以写多个玩家）
 
-​	可以加`-a` 或者 `-s`（可以合成一个参数写作 `-as` 或者 `-sa`）。
+​	可选参数可以为以下值（多个参数使用空格隔开）：
 
-​	`-a` 意为向所有(**a**ll)玩家发送坐标并高亮该玩家；
+​	`-a`, `--all` 意为向所有玩家发送坐标并高亮该玩家
 
-​	`-s` 意为提权(**s**udo)，允许查看受保护的玩家的坐标。
+​	`-s`, `--sudo` 意为提权，允许查看受保护的玩家的坐标
 
-​	两个参数均需要插件配置中设置的 `admin` 等级来执行。
+​	两个参数均需要插件配置中设置的 `admin` 等级来执行
+
+> 于 2.2 版本变更:
+> 
+> 不再支持 `-as` 或 `-sa` 形式的参数，允许添加多个玩家
 
 2. `!!here` （可在配置文件中修改）: 广播自己当前的坐标
 
-​	在配置文件中启用聊天中任意 here 指令解析时，聊天信息中用空格隔开的任意 `!!here` 字段均会被响应 **2.1新版功能**
+> 2.1 新版功能:
+> 
+> 在启用了配置项的情况下, 聊天行中空格隔开的 `!!here` 指令可以被响应
+
+两条指令均可使用的可选参数: (对行中 `!!here` 无效)
+
+​	`-h`, `--highlight` <时长> 设定目标玩家的高亮时长
+
+> 其位置仅被查询而非被广播的情况下，不能高亮玩家
+
+> 2.2 新版功能:
+> 
+> 引入了新可选参数 `-h <duration>`
 
 ## 配置文件
 
@@ -37,24 +57,30 @@ Where Is
 
 以下为配置文件内容
 
-**警告：下方被星号标记的两项的值须在更新到2.x版本前手动配置，否则您将在加载新版本时丢失本插件的全部配置，若您此前从未安装过本插件可无视该条信息**
+> [!WARNING]
+> 下方被星号标记的两项的值须在更新到2.x版本前手动配置，否则您将在加载新版本时丢失本插件的全部配置，若您此前从未安装过本插件可无视该条信息
 
-| 键                                | 值的类型                           | 默认值                     | 说明                                                                                       |
-|----------------------------------|--------------------------------|-------------------------|------------------------------------------------------------------------------------------|
-| `enable_where_is`                | `bool`                         | `true`                  | 设置为`true`以启用查询玩家坐标的功能                                                                    |
-| `enable_here`                    | `bool`                         | `true`                  | 设置为`true`以启用广播自己坐标的功能                                                                    |
-| `enable_here`                    | `bool`                         | `false`                 | 设置为 `true` 以允许聊天中任意 here 指令解析功能 **2.1 新版功能**                                             |
-| *`command_prefix`                | `dict`(含固定的2个项目)               | `'!!vris', '!!whereis'` | 插件指令前缀                                                                                   |
-| `broadcast_to_console`           | `bool`                         | `true`                  | `!!here` 或 `!!vris <player> -a` 会将坐标信息同时显示在服务端控制台                                        |
-| `permission_requirements`        | `dict`(含固定的3个项目)               | 见下表                     | 指令要求的最小权限等级                                                                              |
-| *`hightlight_time`               | `dict`(含固定的2个项目)               | 见下表                     | 当包含 `-a` 参数时高亮玩家的时间                                                                      |
-| `display_waypoints`              | `dict`(含固定的2个项目)               | 见下表                     | 是否显示小地图坐标点                                                                               |
-| `query_timeout`                  | `int`                          | `3`                     | Minecraft Data API的超时时间                                                                  |
-| `click_to_teleport`              | `bool`                         | `true`                  | 允许玩家点击补全传送指令 (仍需OP以执行)                                                                   |
-| `location_protection`            | `dict`(含固定的5个项目)               | 见下表                     | 玩家坐标保护相关设定                                                                               |
-| `dimension_translation_mode`     | `Literal['mcdr', 'minecraft']` | `'mcdr'`                | `mcdr`: 维度名称由MCDR翻译; `minecraft`: 维度名称由Minecraft翻译。在1.19及以上版本，用`mcdr`项可以避免因翻译键名改动造成的翻译失败 |
-| `custom_dimension_name`          | `Dict[str, Dict[str, str]`     | 内容过长不便展示                | 由 MCDR 翻译的维度名称的翻译键值映射。首层键名为语言，二级键名为维度ID（支持非原版维度，原版维度必须填写且应去掉命名空间）                        |
-| `custom_vanilla_translation_key` | `Dict[str, str]`               | 内容过长不便展示                | 由 Minecraft 翻译的维度键名映射 （支持非原版维度，原版维度必须填写且应去掉命名空间）. **2.1 新版功能**                           |
+| 键                                | 值的类型                           | 默认值      | 说明                                                                                       |
+|----------------------------------|--------------------------------|----------|------------------------------------------------------------------------------------------|
+| `enable_where_is`                | `bool`                         | `true`   | 设置为`true`以启用查询玩家坐标的功能                                                                    |
+| `enable_here`                    | `bool`                         | `true`   | 设置为`true`以启用广播自己坐标的功能                                                                    |
+| `enable_here`                    | `bool`                         | `false`  | 设置为 `true` 以允许聊天中任意 here 指令解析功能                                                          |
+| *`command_prefix`                | `dict`(含固定的2个项目)               | 见下表      | 插件指令前缀                                                                                   |
+| `broadcast_to_console`           | `bool`                         | `true`   | `!!here` 或 `!!vris <player> -a` 会将坐标信息同时显示在服务端控制台                                        |
+| `permission_requirements`        | `dict`(含固定的3个项目)               | 见下表      | 指令要求的最小权限等级                                                                              |
+| *`hightlight_time`               | `dict`(含固定的2个项目)               | 见下表      | 当包含 `-a` 参数时高亮玩家的时间                                                                      |
+| `display_waypoints`              | `dict`(含固定的2个项目)               | 见下表      | 是否显示小地图坐标点                                                                               |
+| `query_timeout`                  | `int`                          | `3`      | Minecraft Data API的超时时间                                                                  |
+| `click_to_teleport`              | `bool`                         | `true`   | 允许玩家点击补全传送指令 (仍需OP以执行)                                                                   |
+| `location_protection`            | `dict`(含固定的5个项目)               | 见下表      | 玩家坐标保护相关设定                                                                               |
+| `dimension_translation_mode`     | `Literal['mcdr', 'minecraft']` | `'mcdr'` | `mcdr`: 维度名称由MCDR翻译; `minecraft`: 维度名称由Minecraft翻译。在1.19及以上版本，用`mcdr`项可以避免因翻译键名改动造成的翻译失败 |
+| `custom_dimension_name`          | `Dict[str, Dict[str, str]`     | 内容过长不便展示 | 由 MCDR 翻译的维度名称的翻译键值映射。首层键名为语言，二级键名为维度ID（支持非原版维度，原版维度必须填写且应去掉命名空间）                        |
+| `custom_vanilla_translation_key` | `Dict[str, str]`               | 内容过长不便展示 | 由 Minecraft 翻译的维度键名映射 （支持非原版维度，原版维度必须填写且应去掉命名空间）.                                        |
+
+
+> 2.1 新版功能:
+> 
+> 新的配置项目: `inline_here` 和 `custom_vanilla_translation_key`
 
 
 上述提到的含固定键值对的的配置项如下:

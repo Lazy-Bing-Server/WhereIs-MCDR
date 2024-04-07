@@ -13,8 +13,13 @@ TRANSLATION_KEY_PREFIX = psi.get_self_metadata().id + '.'
 
 
 # Utilities
-def rtr(translation_key: str, *args, with_prefix: bool = True, **kwargs) -> RTextMCDRTranslation:
-    if with_prefix and not translation_key.startswith(TRANSLATION_KEY_PREFIX):
+def rtr(
+    translation_key: str,
+    *args,
+    _vris_rtr_with_prefix: bool = True,
+    **kwargs
+) -> RTextMCDRTranslation:
+    if _vris_rtr_with_prefix and not translation_key.startswith(TRANSLATION_KEY_PREFIX):
         translation_key = f"{TRANSLATION_KEY_PREFIX}{translation_key}"
     return RTextMCDRTranslation(translation_key, *args, **kwargs).set_translator(ntr)
 
@@ -24,15 +29,20 @@ def debug(msg: Union[str, RTextBase]):
 
 
 def ntr(
-        translation_key: str, *args, language: Optional[str] = None, _mcdr_tr_language: Optional[str] = None,
-        allow_failure: bool = True, _default_fallback: Optional[MessageText] = None, log_error_message: bool = True, **kwargs
+    translation_key: str,
+    *args,
+    _mcdr_tr_language: Optional[str] = None,
+    _mcdr_tr_allow_failure: bool = True,
+    _vris_ntr_default_fallback: Optional[MessageText] = None,
+    _vris_ntr_log_error_message: bool = True,
+    **kwargs
 ) -> MessageText:
-    if language is not None and _mcdr_tr_language is None:
-        _mcdr_tr_language = language
     try:
         return psi.tr(
-            translation_key, *args, language=_mcdr_tr_language,
-            _mcdr_tr_language=_mcdr_tr_language, allow_failure=False, **kwargs
+            translation_key, *args,
+            _mcdr_tr_language=_mcdr_tr_language,
+            _mcdr_tr_allow_failure=False,
+            **kwargs
         )
     except (KeyError, ValueError):
         fallback_language = psi.get_mcdr_language()
@@ -49,19 +59,19 @@ def ntr(
                 if item not in languages:
                     languages.append(item)
             languages = ', '.join(languages)
-            if allow_failure:
-                if log_error_message:
+            if _mcdr_tr_allow_failure:
+                if _vris_ntr_log_error_message:
                     psi.logger.error(f'Error translate text "{translation_key}" to language {languages}')
-                if _default_fallback is None:
+                if _vris_ntr_default_fallback is None:
                     return translation_key
-                return _default_fallback
+                return _vris_ntr_default_fallback
             else:
                 raise KeyError(f'Translation key "{translation_key}" not found with language {languages}')
 
 
 def dim_tr(key: str, *args, lang: Optional[str] = None, allow_failure: bool = True, **kwargs):
     try:
-        return ntr(key, *args, lang=lang, allow_failure=False, **kwargs)
+        return ntr(key, *args, lang=lang, _mcdr_tr_allow_failure=False, **kwargs)
     except Exception as exc:
         if not allow_failure:
             raise exc

@@ -1,7 +1,24 @@
 where_is:
+  help:
+    detailed: |
+      §7--------§9 {name} §rv{ver} §7--------§r
+      查询其他玩家的位置
+      §d【基础用法】§r
+      §7{vris} §5<玩家>§3 [可选参数]§r 查询玩家的位置
+      §7{here} §r广播你自己的位置
+      §d【进阶用法】§r
+      参数 §5<玩家>§r 允许添加多个玩家
+      指令 §7{vris}§r 的 §3[可选参数]§r 可为:
+      §8> §b-a§7, §b--all§r 广播查询到的玩家位置
+      §8> §b-s§7, §b--sudo§r 允许查询受保护的玩家
+      适用于所有指令的参数 §3[可选参数]§r:
+      §8> §b-h§7, §b--highlight§6 <时长>§r 设置高亮时长
+    vris: 查询其他玩家的位置
+    here: 广播你自己的位置
+    suggest: 点击填入指令 §7{}
   err:
-    generic: "出现错误: {}"
-    not_online: "这玩家不在线啊"
+    generic: "出现错误: §4{}"
+    not_online: "玩家 §4{}§c 不在线"
     perm_denied: "权限不足"
     invalid_args: "无效的参数"
   warn:

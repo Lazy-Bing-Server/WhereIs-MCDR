@@ -4,7 +4,7 @@ from typing import Tuple
 from mcdreforged.api.rtext import RColor, RTextBase, RTextTranslation
 from where_is.config import config
 from where_is.constants import OVERWORLD, NETHER, END, REG_TO_ID, ID_TO_REG, OVERWORLD_SHORT, NETHER_SHORT, END_SHORT
-from where_is.utils import rtr, dim_tr
+from where_is.utils import rtr, dim_tr, debug
 from where_is.position import Position
 
 """
@@ -113,6 +113,7 @@ def get_dimension(text: str) -> Dimension:
         return LegacyDimension(int(text))
     except:
         pass
-    if text in REG_TO_ID:
+    debug(text)
+    if text in REG_TO_ID.keys():
         return LegacyDimension(REG_TO_ID[text])
     return CustomDimension(text)
