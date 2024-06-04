@@ -13,6 +13,7 @@ class OnlinePlayers:
         self.__lock = RLock()
         self.__players: List[str] = []
         self.__limit = 0
+        self.__enabled = False
 
     def get_player_list(self, refresh: bool = False):
         with self.__lock:
@@ -26,14 +27,16 @@ class OnlinePlayers:
                 self.__refresh_online_players()
             return self.__limit
 
+    @named_thread
     def __add_player(self, player: str):
         with self.__lock:
-            if psi.is_server_startup() and player not in self.__players:
+            if self.__enabled and player not in self.__players:
                 self.__players.append(player)
 
+    @named_thread
     def __remove_player(self, player: str):
         with self.__lock:
-            if player in self.__players:
+            if self.__enabled and player in self.__players:
                 self.__players.remove(player)
 
     @named_thread
@@ -58,9 +61,15 @@ class OnlinePlayers:
                     )
 
     @named_thread
+    def __enable_player_join(self):
+        with self.__lock:
+            self.__enabled = True
+            debug("Player list counting enabled")
+
+    @named_thread
     def __clear_online_players(self):
         with self.__lock:
-            self.__limit, self.__players = None, None
+            self.__limit, self.__players = None, []
             debug("Cleared online player cache")
 
     def register_event_listeners(self):
@@ -69,8 +78,8 @@ class OnlinePlayers:
             lambda *args, **kwargs: self.__refresh_online_players(),
         )
         psi.register_event_listener(
-            MCDRPluginEvents.SERVER_STARTUP,
-            lambda *args, **kwargs: self.__refresh_online_players(),
+            MCDRPluginEvents.SERVER_START,
+            lambda *args, **kwargs: self.__enable_player_join(),
         )
         psi.register_event_listener(
             MCDRPluginEvents.PLAYER_JOINED,

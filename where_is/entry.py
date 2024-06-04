@@ -274,6 +274,9 @@ def register_commands(server: PluginServerInterface):
         here_root = Literal(config.command_prefix.here_prefixes).requires(
             config.permission_requirements.broadcast_is_allowed,
             lambda: rtr('err.perm_denied')
+        ).requires(
+            lambda src: src.is_player,
+            lambda: rtr('err.not_player')
         ).runs(here)
         here_root.then(
             Literal('highlight').then(
@@ -285,13 +288,15 @@ def register_commands(server: PluginServerInterface):
 
 def register_help_messages(server: PluginServerInterface):
     if config.enable_where_is:
-        for p in config.command_prefix.where_is_prefixes:
-            server.register_help_message(p, server.get_self_metadata().description,
-                                         permission=config.permission_requirements.where_is)
+        for pre in config.command_prefix.where_is_prefixes:
+            server.register_help_message(
+                pre, rtr('help.vris'), permission=config.permission_requirements.where_is
+            )
     if config.enable_here:
-        for p in config.command_prefix.here_prefixes:
-            server.register_help_message(p, server.get_self_metadata().description,
-                                         permission=config.permission_requirements.here)
+        for pre in config.command_prefix.here_prefixes:
+            server.register_help_message(
+                pre, rtr('help.here'), permission=config.permission_requirements.here
+            )
 
 
 def register_customized_translations(server: PluginServerInterface):
@@ -305,7 +310,3 @@ def on_load(server: PluginServerInterface, prev_modules):
     register_help_messages(server)
     register_customized_translations(server)
     register_commands(server)
-    for pre in config.command_prefix.here_prefixes:
-        server.register_help_message(pre, rtr('help.here'))
-    for pre in config.command_prefix.where_is_prefixes:
-        server.register_help_message(pre, rtr('help.vris'))

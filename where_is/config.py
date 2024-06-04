@@ -16,7 +16,7 @@ class PermissionReq(Serializable):
         return source.has_permission(self.where_is)
 
     def broadcast_is_allowed(self, source: CommandSource):
-        return source.has_permission(self.here) and isinstance(source, PlayerCommandSource)
+        return source.has_permission(self.here)
 
     def is_admin(self, source: CommandSource):
         return source.has_permission(self.admin)
@@ -111,7 +111,7 @@ class Config(Serializable):
         NETHER_SHORT: 'advancements.nether.root.title',
         END_SHORT: 'advancements.end.root.title'
     }
-    # Enable this option will result in invalid MCDR language preference while calling "!!here"
+    # Enable this option will result in invalid MCDR language pref while calling "!!here"
     # But enable this may relieve the emotion of code OCD patients xD
     here_use_broadcast: bool
 

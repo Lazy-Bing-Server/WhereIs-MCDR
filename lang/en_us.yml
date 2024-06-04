@@ -21,6 +21,7 @@ where_is:
     not_online: "Required player {} is not online"
     perm_denied: "Permission denied"
     invalid_args: "Invalid argument"
+    not_player: This operation can only be performed by player
   warn:
     duplicated_here: "Duplicated function between this plugin and Here, this function will not be triggered while Here exists"
   hover:
