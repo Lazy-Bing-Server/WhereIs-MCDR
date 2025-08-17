@@ -59,6 +59,7 @@ class OnlinePlayers:
                     psi.logger.warning(
                         "Incorrect player count found while refreshing player list"
                     )
+            self.__enabled = True
 
     @named_thread
     def __enable_player_join(self):
@@ -69,16 +70,17 @@ class OnlinePlayers:
     @named_thread
     def __clear_online_players(self):
         with self.__lock:
+            self.__enabled = False
             self.__limit, self.__players = None, []
             debug("Cleared online player cache")
 
     def register_event_listeners(self):
         psi.register_event_listener(
             MCDRPluginEvents.PLUGIN_LOADED,
-            lambda *args, **kwargs: self.__refresh_online_players(),
+            lambda *args, **kwargs: self.__refresh_online_players()
         )
         psi.register_event_listener(
-            MCDRPluginEvents.SERVER_START,
+            MCDRPluginEvents.SERVER_STARTUP,
             lambda *args, **kwargs: self.__enable_player_join(),
         )
         psi.register_event_listener(
@@ -90,7 +92,9 @@ class OnlinePlayers:
         )
         psi.register_event_listener(
             MCDRPluginEvents.SERVER_STOP,
-            lambda *args, **kwargs: self.__clear_online_players(),
+            lambda *args, **kwargs: (
+                self.__clear_online_players(),
+            ),
         )
 
 
